@@ -2,9 +2,9 @@ import pandas as pd
 import scipy.sparse as sps
 import numpy as np
 
-urm_path = "Data/data_train.csv"
-icm_asset_path = "Data/data_ICM_title.csv"
-target_path = "Data/data_target_users_test.csv"
+urm_path = "C:/Users/Giacomo/PycharmProjects/RecSys-PoliMi-2020/Data/data_train.csv"
+icm_asset_path = "C:/Users/Giacomo/PycharmProjects/RecSys-PoliMi-2020/Data/data_ICM_title_abstract.csv"
+target_path = "C:/Users/Giacomo/PycharmProjects/RecSys-PoliMi-2020/Data/data_target_users_test.csv"
 
 
 

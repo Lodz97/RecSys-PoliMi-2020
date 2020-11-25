@@ -202,7 +202,7 @@ def runParameterSearch_Content(recommender_class, URM_train, ICM_object, ICM_nam
 
 
 
-def runParameterSearch_Collaborative(recommender_class, URM_train, URM_train_last_test = None, metric_to_optimize = "PRECISION",
+def runParameterSearch_Collaborative(recommender_class, URM_train, URM_train_last_test = None, metric_to_optimize = "MAP",
                                      evaluator_validation = None, evaluator_test = None, evaluator_validation_earlystopping = None,
                                      output_folder_path ="result_experiments/", parallelizeKNN = True,
                                      n_cases = 35, n_random_starts = 5, resume_from_saved = False, save_model = "best",
@@ -215,7 +215,7 @@ def runParameterSearch_Collaborative(recommender_class, URM_train, URM_train_las
     if not os.path.exists(output_folder_path):
         os.makedirs(output_folder_path)
 
-    earlystopping_keywargs = {"validation_every_n": 5,
+    earlystopping_keywargs = {"validation_every_n": 10,
                               "stop_on_validation": True,
                               "evaluator_object": evaluator_validation_earlystopping,
                               "lower_validations_allowed": 5,
@@ -487,7 +487,7 @@ def runParameterSearch_Collaborative(recommender_class, URM_train, URM_train_las
 
             hyperparameters_range_dictionary = {}
             hyperparameters_range_dictionary["topK"] = Integer(5, 1000)
-            hyperparameters_range_dictionary["epochs"] = Categorical([1500])
+            hyperparameters_range_dictionary["epochs"] = Categorical([600, 1000, 1400])
             hyperparameters_range_dictionary["symmetric"] = Categorical([True, False])
             hyperparameters_range_dictionary["sgd_mode"] = Categorical(["sgd", "adagrad", "adam"])
             hyperparameters_range_dictionary["lambda_i"] = Real(low = 1e-5, high = 1e-2, prior = 'log-uniform')
@@ -593,6 +593,9 @@ from Data_manager.split_functions.split_train_validation_random_holdout import s
 
 
 def read_data_split_and_search():
+    from Data_manager.RecSys2020 import RecSys2020Reader
+    from datetime import datetime
+
     """
     This function provides a simple example on how to tune parameters of a given algorithm
 
@@ -605,14 +608,19 @@ def read_data_split_and_search():
     """
 
 
-    dataReader = Movielens10MReader()
-    dataset = dataReader.load_data()
+    #dataReader = Movielens10MReader()
+    #dataset = dataReader.load_data()
 
-    URM_train, URM_test = split_train_in_two_percentage_global_sample(dataset.get_URM_all(), train_percentage = 0.80)
+    #URM_train, URM_test = split_train_in_two_percentage_global_sample(dataset.get_URM_all(), train_percentage = 0.80)
+    #URM_train, URM_validation = split_train_in_two_percentage_global_sample(URM_train, train_percentage = 0.80)
+
+    URM_all, user_id_unique, item_id_unique = RecSys2020Reader.load_urm()
+    URM_train, URM_test = split_train_in_two_percentage_global_sample(URM_all, train_percentage=0.90)
     URM_train, URM_validation = split_train_in_two_percentage_global_sample(URM_train, train_percentage = 0.80)
 
 
-    output_folder_path = "result_experiments/SKOPT_prova/"
+    output_folder_path = "ParamResultsExperiments/SKOPT_Item_User_KNNCF/"
+    output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S')
 
 
     # If directory does not exist, create
@@ -620,22 +628,17 @@ def read_data_split_and_search():
         os.makedirs(output_folder_path)
 
 
-
-
-
-
-
     collaborative_algorithm_list = [
-        Random,
-        TopPop,
-        P3alphaRecommender,
-        RP3betaRecommender,
+        # Random,
+        # TopPop,
+        #P3alphaRecommender,
+        #RP3betaRecommender,
         ItemKNNCFRecommender,
         UserKNNCFRecommender,
-        # MatrixFactorization_BPR_Cython,
-        # MatrixFactorization_FunkSVD_Cython,
+        #MatrixFactorization_BPR_Cython,
+        #MatrixFactorization_FunkSVD_Cython,
         # PureSVDRecommender,
-        # SLIM_BPR_Cython,
+        #  SLIM_BPR_Cython,
         # SLIMElasticNetRecommender
     ]
 
@@ -643,14 +646,14 @@ def read_data_split_and_search():
 
     from Base.Evaluation.Evaluator import EvaluatorHoldout
 
-    evaluator_validation = EvaluatorHoldout(URM_validation, cutoff_list=[5])
+    evaluator_validation = EvaluatorHoldout(URM_validation, cutoff_list=[10])
     evaluator_test = EvaluatorHoldout(URM_test, cutoff_list=[5, 10])
 
 
     runParameterSearch_Collaborative_partial = partial(runParameterSearch_Collaborative,
                                                        URM_train = URM_train,
                                                        metric_to_optimize = "MAP",
-                                                       n_cases = 8,
+                                                       n_cases = 20,
                                                        evaluator_validation_earlystopping = evaluator_validation,
                                                        evaluator_validation = evaluator_validation,
                                                        evaluator_test = evaluator_test,
