@@ -81,7 +81,7 @@ def run_KNNRecommender_on_similarity_type(similarity_type, parameterSearch,
     hyperparameters_range_dictionary["similarity"] = Categorical([similarity_type])
     hyperparameters_range_dictionary["normalize"] = Categorical([True, False])
 
-    is_set_similarity = similarity_type in ["tversky", "dice", "jaccard", "tanimoto"]
+    is_set_similarity = similarity_type in ["tversky", "dice", "jaccard", "tanimoto", 'cosine', 'adjusted', 'asymmetric']
 
     if similarity_type == "asymmetric":
         hyperparameters_range_dictionary["asymmetric_alpha"] = Real(low = 0, high = 2, prior = 'uniform')
@@ -616,11 +616,11 @@ def read_data_split_and_search():
 
     URM_all, user_id_unique, item_id_unique = RecSys2020Reader.load_urm()
     URM_train, URM_test = split_train_in_two_percentage_global_sample(URM_all, train_percentage=0.90)
-    URM_train, URM_validation = split_train_in_two_percentage_global_sample(URM_train, train_percentage = 0.80)
+    URM_train, URM_validation = split_train_in_two_percentage_global_sample(URM_train, train_percentage = 0.85)
 
 
-    output_folder_path = "ParamResultsExperiments/SKOPT_Item_User_KNNCF/"
-    output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S')
+    output_folder_path = "ParamResultsExperiments/SKOPT_BPR_Cython_"
+    output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S/')
 
 
     # If directory does not exist, create
@@ -633,12 +633,12 @@ def read_data_split_and_search():
         # TopPop,
         #P3alphaRecommender,
         #RP3betaRecommender,
-        ItemKNNCFRecommender,
-        UserKNNCFRecommender,
+        #ItemKNNCFRecommender,
+        #UserKNNCFRecommender,
         #MatrixFactorization_BPR_Cython,
         #MatrixFactorization_FunkSVD_Cython,
         # PureSVDRecommender,
-        #  SLIM_BPR_Cython,
+         SLIM_BPR_Cython,
         # SLIMElasticNetRecommender
     ]
 
@@ -653,7 +653,8 @@ def read_data_split_and_search():
     runParameterSearch_Collaborative_partial = partial(runParameterSearch_Collaborative,
                                                        URM_train = URM_train,
                                                        metric_to_optimize = "MAP",
-                                                       n_cases = 20,
+                                                       n_cases = 60,
+                                                       n_random_starts=20,
                                                        evaluator_validation_earlystopping = evaluator_validation,
                                                        evaluator_validation = evaluator_validation,
                                                        evaluator_test = evaluator_test,

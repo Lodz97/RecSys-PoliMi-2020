@@ -11,6 +11,8 @@ from MatrixFactorization.PyTorch import MF_MSE_PyTorch
 from MatrixFactorization import IALSRecommender, NMFRecommender, PureSVDRecommender
 from KNN import ItemKNNCBFRecommender, ItemKNNCFRecommender, ItemKNNCustomSimilarityRecommender,\
                 ItemKNNSimilarityHybridRecommender, UserKNNCFRecommender
+from EASE_R import EASE_R_Recommender
+import ItemKNNScoresHybridRecommender
 import CreateCSV
 
 # https://github.com/MaurizioFD/RecSys_Course_AT_PoliMi/blob/master/Practice%2009%20-%20SLIM%20BPR.ipynb
@@ -38,6 +40,7 @@ if __name__ == '__main__':
     pyplot.xlabel('Sorted User')
     pyplot.show()
 
+    np.random.seed(1234)
     URM_train, URM_test = train_test_holdout(URM_all, train_perc=0.8)
     ICM_train, ICM_test = train_test_holdout(ICM_all, train_perc=0.8)
     evaluator_validation = EvaluatorHoldout(URM_test, cutoff_list=[10], exclude_seen=True)
@@ -50,13 +53,21 @@ if __name__ == '__main__':
                               }
 
     # MAP 0.057, kaggle MAP 0.054
-    # recommender = SLIM_BPR_Cython(URM_train, recompile_cython=False)
-    # recommender.fit(**{"topK": 665, "epochs": 2000, "symmetric": False, "sgd_mode": "adagrad", "lambda_i": 0.01,
-    #                    "lambda_j": 1e-05, "learning_rate": 0.0001}, **earlystopping_keywargs)
+    recommender1 = SLIM_BPR_Cython(URM_train, recompile_cython=False)
+    recommender1.load_model('SavedModels', 'SLIM_BPR_Cyrhon')
+    #recommender1.fit(**{"topK": 865, "epochs": 1000, "symmetric": False, "sgd_mode": "adagrad", "lambda_i": 0.01,
+    #                  "lambda_j": 1e-05, "learning_rate": 0.0001})
+    #recommender.save_model('SavedModels', 'SLIM_BPR_Cyrhon')
+    w1 = recommender1.W_sparse
+
+
 
     # MAP 0.052
-    # recommender = P3alphaRecommender.P3alphaRecommender(URM_train)
-    # recommender.fit(**{"topK": 998, "alpha": 0.08643815887780361, "normalize_similarity": False})
+    #recommender2 = P3alphaRecommender.P3alphaRecommender(URM_train)
+    #recommender2.fit(**{"topK": 998, "alpha": 0.08643815887780361, "normalize_similarity": False})
+    #recommender2.save_model('SavedModels', 'P3alpha')
+    #w2 = recommender2.W_sparse
+
 
     # Bad MAP 0.035
     # recommender = RP3betaRecommender.RP3betaRecommender(URM_train)
@@ -100,21 +111,39 @@ if __name__ == '__main__':
     # recommender = PureSVDRecommender.PureSVDRecommender(URM_train)
     # recommender.fit(num_factors=2000)
 
-    # MAP 0.026 (topK=700, shrink=300, similarity='jaccard', normalize=True, feature_weighting = "TF-IDF")
+    # Bad MAP 0.026 (topK=700, shrink=300, similarity='jaccard', normalize=True, feature_weighting = "TF-IDF")
     # recommender = ItemKNNCBFRecommender.ItemKNNCBFRecommender(URM_train, ICM_train)
     # recommender.fit(topK=700, shrink=200, similarity='jaccard', normalize=True, feature_weighting = "TF-IDF")
 
     # MAP 0.0563 (**{"topK": 1000, "shrink": 732, "similarity": "cosine", "normalize": True,
     #               "feature_weighting": "TF-IDF"})
-    # recommender = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_train)
-    # recommender.fit(**{"topK": 1000, "shrink": 732, "similarity": "cosine", "normalize": True,
-    #                    "feature_weighting": "TF-IDF"})
+    recommender3 = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_train)
+    recommender3.load_model('SavedModels', 'ItemKNNCF')
+    #recommender.fit(**{"topK": 1000, "shrink": 732, "similarity": "cosine", "normalize": True,
+    #                  "feature_weighting": "TF-IDF"})
+    #recommender.save_model('SavedModels', 'ItemKNNCF')
+    w3 = recommender3.W_sparse
 
     # MAP 0.058 (**{"topK": 305, "shrink": 0, "similarity": "cosine", "normalize": True,
     #               "feature_weighting": "TF-IDF"})
-    recommender = UserKNNCFRecommender.UserKNNCFRecommender(URM_train)
-    recommender.fit(**{"topK": 305, "shrink": 0, "similarity": "cosine", "normalize": True,
-                       "feature_weighting": "TF-IDF"})
+    recommender4 = UserKNNCFRecommender.UserKNNCFRecommender(URM_train)
+    recommender4.fit(**{"topK": 305, "shrink": 0, "similarity": "cosine", "normalize": True,
+                        "feature_weighting": "TF-IDF"})
+
+
+    # MAP 0.049 (topK=100, l2_norm = 1e3, normalize_matrix = False, verbose = True)
+    # recommender = EASE_R_Recommender.EASE_R_Recommender(URM_train)
+    # recommender.fit(topK=None, l2_norm = 3 * 1e3, normalize_matrix = False, verbose = True)
+
+    # MAP 0.053
+    #recommender = ItemKNNSimilarityHybridRecommender.ItemKNNSimilarityHybridRecommender(URM_train, w1, w2)
+    #recommender.fit(topK=300, alpha = 0.7)
+
+    recommendert = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, recommender3, recommender4)
+    recommendert.fit(alpha = 0.6)
+
+    recommender = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, recommender1, recommendert)
+    recommender.fit(alpha=0.6)
 
     print(evaluator_validation.evaluateRecommender(recommender))
 
