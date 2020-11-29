@@ -24,7 +24,7 @@ from EASE_R.EASE_R_Recommender import EASE_R_Recommender
 
 # KNN machine learning
 from SLIM_BPR.Cython.SLIM_BPR_Cython import SLIM_BPR_Cython
-from SLIM_ElasticNet.SLIMElasticNetRecommender import SLIMElasticNetRecommender
+from SLIM_ElasticNet.SLIMElasticNetRecommender import SLIMElasticNetRecommender, MultiThreadSLIM_ElasticNet
 
 # Matrix Factorization
 from MatrixFactorization.PureSVDRecommender import PureSVDRecommender
@@ -32,6 +32,7 @@ from MatrixFactorization.IALSRecommender import IALSRecommender
 from MatrixFactorization.NMFRecommender import NMFRecommender
 from MatrixFactorization.Cython.MatrixFactorization_Cython import MatrixFactorization_BPR_Cython,\
     MatrixFactorization_FunkSVD_Cython, MatrixFactorization_AsySVD_Cython
+
 
 
 
@@ -507,12 +508,12 @@ def runParameterSearch_Collaborative(recommender_class, URM_train, URM_train_las
 
         ##########################################################################################################
 
-        if recommender_class is SLIMElasticNetRecommender:
+        if recommender_class is SLIMElasticNetRecommender or MultiThreadSLIM_ElasticNet:
 
             hyperparameters_range_dictionary = {}
             hyperparameters_range_dictionary["topK"] = Integer(5, 1000)
             hyperparameters_range_dictionary["l1_ratio"] = Real(low = 1e-5, high = 1.0, prior = 'log-uniform')
-            hyperparameters_range_dictionary["alpha"] = Real(low = 1e-3, high = 1.0, prior = 'uniform')
+            # hyperparameters_range_dictionary["alpha"] = Real(low = 1e-3, high = 1.0, prior = 'uniform') no for multi
 
             recommender_input_args = SearchInputRecommenderArgs(
                 CONSTRUCTOR_POSITIONAL_ARGS = [URM_train],
@@ -527,8 +528,8 @@ def runParameterSearch_Collaborative(recommender_class, URM_train, URM_train_las
         if recommender_class is EASE_R_Recommender:
 
             hyperparameters_range_dictionary = {}
-            hyperparameters_range_dictionary["topK"] = Categorical([None])#Integer(5, 3000)
-            hyperparameters_range_dictionary["normalize_matrix"] = Categorical([False])
+            hyperparameters_range_dictionary["topK"] = Integer(5, 3000) #Categorical([None])#
+            hyperparameters_range_dictionary["normalize_matrix"] = Categorical([True, False])
             hyperparameters_range_dictionary["l2_norm"] = Real(low = 1e0, high = 1e7, prior = 'log-uniform')
 
             recommender_input_args = SearchInputRecommenderArgs(
@@ -559,7 +560,7 @@ def runParameterSearch_Collaborative(recommender_class, URM_train, URM_train_las
                                output_folder_path = output_folder_path,
                                output_file_name_root = output_file_name_root,
                                metric_to_optimize = metric_to_optimize,
-                               recommender_input_args_last_test = recommender_input_args_last_test)
+                               recommendedr_input_args_last_test = recommender_input_args_last_test)
 
 
 
@@ -619,7 +620,7 @@ def read_data_split_and_search():
     URM_train, URM_validation = split_train_in_two_percentage_global_sample(URM_train, train_percentage = 0.85)
 
 
-    output_folder_path = "ParamResultsExperiments/SKOPT_BPR_Cython_"
+    output_folder_path = "ParamResultsExperiments/SKOPT_SLIMElasticNet_"
     output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S/')
 
 
@@ -631,15 +632,16 @@ def read_data_split_and_search():
     collaborative_algorithm_list = [
         # Random,
         # TopPop,
-        #P3alphaRecommender,
+        # P3alphaRecommender,
         #RP3betaRecommender,
         #ItemKNNCFRecommender,
         #UserKNNCFRecommender,
         #MatrixFactorization_BPR_Cython,
         #MatrixFactorization_FunkSVD_Cython,
         # PureSVDRecommender,
-         SLIM_BPR_Cython,
-        # SLIMElasticNetRecommender
+        # SLIM_BPR_Cython,
+        MultiThreadSLIM_ElasticNet
+        #EASE_R_Recommender
     ]
 
 
@@ -653,8 +655,8 @@ def read_data_split_and_search():
     runParameterSearch_Collaborative_partial = partial(runParameterSearch_Collaborative,
                                                        URM_train = URM_train,
                                                        metric_to_optimize = "MAP",
-                                                       n_cases = 60,
-                                                       n_random_starts=20,
+                                                       n_cases = 35,
+                                                       n_random_starts=10,
                                                        evaluator_validation_earlystopping = evaluator_validation,
                                                        evaluator_validation = evaluator_validation,
                                                        evaluator_test = evaluator_test,

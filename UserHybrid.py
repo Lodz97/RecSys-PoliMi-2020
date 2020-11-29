@@ -56,6 +56,10 @@ if __name__ == '__main__':
     topPop = TopPop(URM_train)
     topPop.fit()
 
+
+    p3alpha = P3alphaRecommender.P3alphaRecommender(URM_train)
+    p3alpha.fit(**{"topK": 991, "alpha": 0.4705816992313091, "normalize_similarity": False})
+
     itemKNNCF = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_train)
     itemKNNCF.fit(**{"topK": 1000, "shrink": 732, "similarity": "cosine", "normalize": True,
                      "feature_weighting": "TF-IDF"})
@@ -66,6 +70,11 @@ if __name__ == '__main__':
     itemKNNCBF = ItemKNNCBFRecommender.ItemKNNCBFRecommender(URM_train, ICM_train)
     itemKNNCBF.fit(topK=700, shrink=200, similarity='jaccard', normalize=True, feature_weighting = "TF-IDF")
 
+    slim = SLIMElasticNetRecommender.MultiThreadSLIM_ElasticNet(URM_train)
+    slim.fit(**{"topK": 87, "l1_ratio": 0.000010002224923703737})
+    #slim.load_model('C:\\Users\\Giacomo\\PycharmProjects\\RecSys-PoliMi-2020\\ParameterTuning\\ParamResultsExperiments\\SKOPT_SLIMElasticNet_Nov28_19-42-57\\',
+    #                'SLIMElasticNetRecommender_best_model.zip')
+
     #bpr = SLIM_BPR_Cython(URM_train, recompile_cython=False)
     #bpr.fit(**{"topK": 1000, "epochs": 130, "symmetric": False, "sgd_mode": "adagrad", "lambda_i": 1e-05,
     #                   "lambda_j": 0.01, "learning_rate": 0.0001})
@@ -73,19 +82,21 @@ if __name__ == '__main__':
     pureSVD = PureSVDRecommender.PureSVDRecommender(URM_train)
     pureSVD.fit()
 
-    hyb = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, itemKNNCBF, userKNNCF)
+    hyb = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, itemKNNCBF, p3alpha)
     hyb.fit(alpha=0.5)
 
     # Kaggle MAP 0.081
-    hyb2 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb, itemKNNCF)
+    hyb2 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb, slim)
     hyb2.fit(alpha=0.5)
 
-    #hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb2, bpr)
-    #hyb3.fit(alpha=0.5)
+    hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb, hyb2)
+    hyb3.fit(alpha=0.5)
 
+    MAP_p3alpha_per_group = []
     MAP_itemKNNCF_per_group = []
     MAP_userKNNCF_per_group = []
     MAP_itemKNNCBF_per_group = []
+    MAP_slim_per_group = []
     MAP_pureSVD_per_group = []
     #MAP_bpr_per_group = []
     MAP_topPop_per_group = []
@@ -114,6 +125,9 @@ if __name__ == '__main__':
 
         evaluator_test = EvaluatorHoldout(URM_test, cutoff_list=[cutoff], ignore_users=users_not_in_group)
 
+        results, _ = evaluator_test.evaluateRecommender(p3alpha)
+        MAP_p3alpha_per_group.append(results[cutoff]["MAP"])
+
         results, _ = evaluator_test.evaluateRecommender(itemKNNCF)
         MAP_itemKNNCF_per_group.append(results[cutoff]["MAP"])
 
@@ -122,6 +136,9 @@ if __name__ == '__main__':
 
         results, _ = evaluator_test.evaluateRecommender(itemKNNCBF)
         MAP_itemKNNCBF_per_group.append(results[cutoff]["MAP"])
+
+        results, _ = evaluator_test.evaluateRecommender(slim)
+        MAP_slim_per_group.append(results[cutoff]["MAP"])
 
         results, _ = evaluator_test.evaluateRecommender(pureSVD)
         MAP_pureSVD_per_group.append(results[cutoff]["MAP"])
@@ -138,20 +155,22 @@ if __name__ == '__main__':
         results, _ = evaluator_test.evaluateRecommender(hyb2)
         MAP_hyb2_per_group.append(results[cutoff]["MAP"])
 
-        #results, _ = evaluator_test.evaluateRecommender(hyb3)
-        #MAP_hyb3_per_group.append(results[cutoff]["MAP"])
+        results, _ = evaluator_test.evaluateRecommender(hyb3)
+        MAP_hyb3_per_group.append(results[cutoff]["MAP"])
 
     import matplotlib.pyplot as pyplot
 
+    pyplot.plot(MAP_p3alpha_per_group, label="p3alpha")
     pyplot.plot(MAP_itemKNNCF_per_group, label="itemKNNCF")
     pyplot.plot(MAP_userKNNCF_per_group, label="userKNNCF")
     pyplot.plot(MAP_itemKNNCBF_per_group, label="itemKNNCBF")
+    pyplot.plot(MAP_slim_per_group, label="slim")
     pyplot.plot(MAP_pureSVD_per_group, label="pureSVD")
     #pyplot.plot(MAP_bpr_per_group, label="bpr")
     pyplot.plot(MAP_topPop_per_group, label="topPop")
     pyplot.plot(MAP_hyb_per_group, label="hyb")
     pyplot.plot(MAP_hyb2_per_group, label="hyb2")
-    #pyplot.plot(MAP_hyb3_per_group, label="hyb3")
+    pyplot.plot(MAP_hyb3_per_group, label="hyb3")
     pyplot.ylabel('MAP')
     pyplot.xlabel('User Group')
     pyplot.legend()
@@ -163,6 +182,10 @@ if __name__ == '__main__':
     print(evaluator_validation.evaluateRecommender(userKNNCF))
     print(evaluator_validation.evaluateRecommender(hyb))
     print(evaluator_validation.evaluateRecommender(hyb2))
-    #print(evaluator_validation.evaluateRecommender(hyb3))
+    print(evaluator_validation.evaluateRecommender(hyb3))
     item_list = hyb.recommend(target_ids, cutoff=10)
-    CreateCSV.create_csv(target_ids, item_list, 'Hyb_User_Item_KNNCF')
+    CreateCSV.create_csv(target_ids, item_list, 'Hyb1')
+    item_list = hyb2.recommend(target_ids, cutoff=10)
+    CreateCSV.create_csv(target_ids, item_list, 'Hyb2')
+    item_list = hyb3.recommend(target_ids, cutoff=10)
+    CreateCSV.create_csv(target_ids, item_list, 'Hyb3')

@@ -52,7 +52,6 @@ if __name__ == '__main__':
                               "validation_metric": "MAP",
                               }
 
-    # MAP 0.07 Kaggle "topK": 131, "shrink": 2, "similarity": "cosine", "normalize": true}
 
     recommender = SLIM_BPR_Cython(URM_train, recompile_cython=False)
     recommender.fit(**{"topK": 1000, "epochs": 130, "symmetric": False, "sgd_mode": "adagrad", "lambda_i": 1e-05,
@@ -61,5 +60,4 @@ if __name__ == '__main__':
 
     print(evaluator_validation.evaluateRecommender(recommender))
 
-    item_list = recommender.recommend(target_ids, cutoff=10)
-    CreateCSV.create_csv(target_ids, item_list, 'MyRec')
+    y
