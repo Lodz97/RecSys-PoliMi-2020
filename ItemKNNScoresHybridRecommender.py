@@ -30,21 +30,8 @@ class ItemKNNScoresHybridRecommender(BaseItemSimilarityMatrixRecommender):
         :return:
         """
 
-        user_profile_array = self.URM_train[user_id_array]
-        user_weights_array = self.Recommender_2.W_sparse[user_id_array]
-
-        if items_to_compute is not None:
-            item_scores1 = - np.ones((len(user_id_array), self.URM_train.shape[1]), dtype=np.float32) * np.inf
-            item_scores_all1 = user_profile_array.dot(self.Recommender_1.W_sparse).toarray()
-            item_scores1[:, items_to_compute] = item_scores_all1[:, items_to_compute]
-            item_scores2 = - np.ones((len(user_id_array), self.URM_train.shape[1]), dtype=np.float32) * np.inf
-            item_scores_all2 = user_weights_array.dot(self.Recommender_2.URM_train).toarray()
-            item_scores2[:, items_to_compute] = item_scores_all2[:, items_to_compute]
-        else:
-            #print(self.Recommender_1.W_sparse)
-            #print(self.Recommender_2.W_sparse)
-            item_scores1 = self.Recommender_1._compute_item_score(user_id_array, items_to_compute)
-            item_scores2 = self.Recommender_2._compute_item_score(user_id_array, items_to_compute)
+        item_scores1 = self.Recommender_1._compute_item_score(user_id_array, items_to_compute)
+        item_scores2 = self.Recommender_2._compute_item_score(user_id_array, items_to_compute)
 
         mean1 = np.mean(item_scores1)
         mean2 = np.mean(item_scores2)

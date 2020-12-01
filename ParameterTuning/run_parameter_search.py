@@ -124,7 +124,7 @@ def run_KNNRecommender_on_similarity_type(similarity_type, parameterSearch,
 
 def runParameterSearch_Content(recommender_class, URM_train, ICM_object, ICM_name, URM_train_last_test = None,
                                n_cases = 30, n_random_starts = 5, resume_from_saved = False, save_model = "best",
-                             evaluator_validation= None, evaluator_test=None, metric_to_optimize = "PRECISION",
+                             evaluator_validation= None, evaluator_test=None, metric_to_optimize = "MAP",
                              output_folder_path ="result_experiments/", parallelizeKNN = False, allow_weighting = True,
                              similarity_type_list = None):
 
@@ -508,7 +508,7 @@ def runParameterSearch_Collaborative(recommender_class, URM_train, URM_train_las
 
         ##########################################################################################################
 
-        if recommender_class is SLIMElasticNetRecommender or MultiThreadSLIM_ElasticNet:
+        if recommender_class in [SLIMElasticNetRecommender, MultiThreadSLIM_ElasticNet]:
 
             hyperparameters_range_dictionary = {}
             hyperparameters_range_dictionary["topK"] = Integer(5, 1000)
@@ -560,7 +560,7 @@ def runParameterSearch_Collaborative(recommender_class, URM_train, URM_train_las
                                output_folder_path = output_folder_path,
                                output_file_name_root = output_file_name_root,
                                metric_to_optimize = metric_to_optimize,
-                               recommendedr_input_args_last_test = recommender_input_args_last_test)
+                               recommender_input_args_last_test = recommender_input_args_last_test)
 
 
 
@@ -616,11 +616,14 @@ def read_data_split_and_search():
     #URM_train, URM_validation = split_train_in_two_percentage_global_sample(URM_train, train_percentage = 0.80)
 
     URM_all, user_id_unique, item_id_unique = RecSys2020Reader.load_urm()
+    ICM_all = RecSys2020Reader.load_icm_asset()
     URM_train, URM_test = split_train_in_two_percentage_global_sample(URM_all, train_percentage=0.90)
     URM_train, URM_validation = split_train_in_two_percentage_global_sample(URM_train, train_percentage = 0.85)
+    ICM_train, ICM_test = split_train_in_two_percentage_global_sample(ICM_all, train_percentage=0.90)
+    ICM_train, ICM_validation = split_train_in_two_percentage_global_sample(ICM_train, train_percentage=0.85)
 
 
-    output_folder_path = "ParamResultsExperiments/SKOPT_SLIMElasticNet_"
+    output_folder_path = "ParamResultsExperiments/SKOPT_CBF_"
     output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S/')
 
 
@@ -632,7 +635,7 @@ def read_data_split_and_search():
     collaborative_algorithm_list = [
         # Random,
         # TopPop,
-        # P3alphaRecommender,
+        #P3alphaRecommender,
         #RP3betaRecommender,
         #ItemKNNCFRecommender,
         #UserKNNCFRecommender,
@@ -640,8 +643,12 @@ def read_data_split_and_search():
         #MatrixFactorization_FunkSVD_Cython,
         # PureSVDRecommender,
         # SLIM_BPR_Cython,
-        MultiThreadSLIM_ElasticNet
+        #MultiThreadSLIM_ElasticNet
         #EASE_R_Recommender
+    ]
+
+    content_algorithm_list = [
+        ItemKNNCBFRecommender
     ]
 
 
@@ -655,22 +662,34 @@ def read_data_split_and_search():
     runParameterSearch_Collaborative_partial = partial(runParameterSearch_Collaborative,
                                                        URM_train = URM_train,
                                                        metric_to_optimize = "MAP",
-                                                       n_cases = 35,
-                                                       n_random_starts=10,
+                                                       n_cases = 200,
+                                                       n_random_starts=60,
                                                        evaluator_validation_earlystopping = evaluator_validation,
                                                        evaluator_validation = evaluator_validation,
                                                        evaluator_test = evaluator_test,
                                                        output_folder_path = output_folder_path)
+
+    runParameterSearch_Content_partial = partial(runParameterSearch_Content,
+                                                 URM_train=URM_train,
+                                                 ICM_object=ICM_train,
+                                                 ICM_name='titles',
+                                                 metric_to_optimize="MAP",
+                                                 n_cases=50,
+                                                 n_random_starts=16,
+                                                 evaluator_validation=evaluator_validation,
+                                                 evaluator_test=evaluator_test,
+                                                 output_folder_path=output_folder_path)
 
 
 
     from Utils.PoolWithSubprocess import PoolWithSubprocess
 
 
-    # pool = PoolWithSubprocess(processes=int(multiprocessing.cpu_count()), maxtasksperchild=1)
-    # resultList = pool.map(runParameterSearch_Collaborative_partial, collaborative_algorithm_list)
-    # pool.close()
-    # pool.join()
+    pool = PoolWithSubprocess(processes=int(multiprocessing.cpu_count()), maxtasksperchild=1)
+    resultList = pool.map_async(runParameterSearch_Collaborative_partial, collaborative_algorithm_list)
+    resultList2 = pool.map_async(runParameterSearch_Content_partial, content_algorithm_list)
+    pool.close()
+    pool.join()
 
 
 
@@ -679,6 +698,17 @@ def read_data_split_and_search():
         try:
 
             runParameterSearch_Collaborative_partial(recommender_class)
+
+        except Exception as e:
+
+            print("On recommender {} Exception {}".format(recommender_class, str(e)))
+            traceback.print_exc()
+
+    for recommender_class in content_algorithm_list:
+
+        try:
+
+            runParameterSearch_Content_partial(recommender_class)
 
         except Exception as e:
 
