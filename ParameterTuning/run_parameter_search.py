@@ -454,7 +454,7 @@ def runParameterSearch_Collaborative(recommender_class, URM_train, URM_train_las
         if recommender_class is PureSVDRecommender:
 
             hyperparameters_range_dictionary = {}
-            hyperparameters_range_dictionary["num_factors"] = Integer(1, 350)
+            hyperparameters_range_dictionary["num_factors"] = Integer(1, 650)
 
             recommender_input_args = SearchInputRecommenderArgs(
                 CONSTRUCTOR_POSITIONAL_ARGS = [URM_train],
@@ -641,14 +641,14 @@ def read_data_split_and_search():
         #UserKNNCFRecommender,
         #MatrixFactorization_BPR_Cython,
         #MatrixFactorization_FunkSVD_Cython,
-        # PureSVDRecommender,
+        PureSVDRecommender,
         # SLIM_BPR_Cython,
         #MultiThreadSLIM_ElasticNet
         #EASE_R_Recommender
     ]
 
     content_algorithm_list = [
-        ItemKNNCBFRecommender
+        #ItemKNNCBFRecommender
     ]
 
 
@@ -662,8 +662,8 @@ def read_data_split_and_search():
     runParameterSearch_Collaborative_partial = partial(runParameterSearch_Collaborative,
                                                        URM_train = URM_train,
                                                        metric_to_optimize = "MAP",
-                                                       n_cases = 200,
-                                                       n_random_starts=60,
+                                                       n_cases = 100,
+                                                       n_random_starts=30,
                                                        evaluator_validation_earlystopping = evaluator_validation,
                                                        evaluator_validation = evaluator_validation,
                                                        evaluator_test = evaluator_test,

@@ -17,6 +17,8 @@ Created on 22/11/17
 
 #Hybrid
 from ScoresHybridP3alphaKNNCBF import ScoresHybridP3alphaKNNCBF
+from ScoresHybridRP3betaKNNCBF import ScoresHybridRP3betaKNNCBF
+from ScoresHybridP3alphaPureSVD import ScoresHybridP3alphaPureSVD
 
 
 ######################################################################
@@ -57,17 +59,19 @@ def runParameterSearch_Hybrid(recommender_class, URM_train, ICM_train, URM_train
 
        ##########################################################################################################
 
-        if recommender_class is ScoresHybridP3alphaKNNCBF:
+        if recommender_class in [ScoresHybridP3alphaKNNCBF, ScoresHybridRP3betaKNNCBF]:
 
             hyperparameters_range_dictionary = {}
             hyperparameters_range_dictionary["topK_P"] = Integer(5, 1000)
             hyperparameters_range_dictionary["alpha_P"] = Real(low = 0, high = 2, prior = 'uniform')
-            hyperparameters_range_dictionary["normalize_similarity_P"] = Categorical([True, False])
+            hyperparameters_range_dictionary["normalize_similarity_P"] = Categorical([False])
             hyperparameters_range_dictionary["topK"] = Integer(5, 1000)
             hyperparameters_range_dictionary["shrink"] = Integer(0, 1000)
             hyperparameters_range_dictionary["similarity"] = Categorical(["tversky", "tanimoto", 'cosine', 'asymmetric'])
             hyperparameters_range_dictionary["normalize"] = Categorical([True, False])
-            hyperparameters_range_dictionary["alpha"] = Real(0, 1)
+            hyperparameters_range_dictionary["alpha"] = Real(low = 0, high = 1, prior = 'uniform')
+            if recommender_class is ScoresHybridRP3betaKNNCBF:
+                hyperparameters_range_dictionary["beta_P"] = Real(low = 0, high = 2, prior = 'uniform')
 
             if allow_weighting:
                 hyperparameters_range_dictionary["feature_weighting"] = Categorical(["none", "BM25", "TF-IDF"])
@@ -77,6 +81,24 @@ def runParameterSearch_Hybrid(recommender_class, URM_train, ICM_train, URM_train
                 CONSTRUCTOR_KEYWORD_ARGS = {},
                 FIT_POSITIONAL_ARGS = [],
                 FIT_KEYWORD_ARGS = {}
+            )
+
+        ##########################################################################################################
+
+        if recommender_class is ScoresHybridP3alphaPureSVD:
+
+            hyperparameters_range_dictionary = {}
+            hyperparameters_range_dictionary["topK_P"] = Integer(5, 1000)
+            hyperparameters_range_dictionary["alpha_P"] = Real(low=0, high=2, prior='uniform')
+            hyperparameters_range_dictionary["normalize_similarity_P"] = Categorical([False])
+            hyperparameters_range_dictionary["num_factors"] = Integer(1, 500)
+
+
+            recommender_input_args = SearchInputRecommenderArgs(
+                CONSTRUCTOR_POSITIONAL_ARGS=[URM_train],
+                CONSTRUCTOR_KEYWORD_ARGS={},
+                FIT_POSITIONAL_ARGS=[],
+                FIT_KEYWORD_ARGS={}
             )
 
        #########################################################################################################
@@ -120,6 +142,7 @@ from Data_manager.split_functions.split_train_validation_random_holdout import s
 def read_data_split_and_search():
     from Data_manager.RecSys2020 import RecSys2020Reader
     from datetime import datetime
+    from scipy import sparse as sps
 
     """
     This function provides a simple example on how to tune parameters of a given algorithm
@@ -143,8 +166,11 @@ def read_data_split_and_search():
     ICM_train, ICM_test = split_train_in_two_percentage_global_sample(ICM_all, train_percentage=0.95)
     ICM_train, ICM_validation = split_train_in_two_percentage_global_sample(ICM_train, train_percentage=0.90)
 
+    URM_ICM_train = sps.vstack([URM_train, ICM_all.T])
+    URM_ICM_train = URM_ICM_train.tocsr()
 
-    output_folder_path = "ParamResultsExperiments/SKOPT_Hyb_P3alpha_KNNCBF_"
+
+    output_folder_path = "ParamResultsExperiments/SKOPT_Hyb_P3alpha_KNNCBF_URM_ICM"
     output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S/')
 
 
@@ -154,17 +180,19 @@ def read_data_split_and_search():
 
 
     hybrid_algorithm_list = [
-        ScoresHybridP3alphaKNNCBF
+        ScoresHybridP3alphaKNNCBF,
+        #ScoresHybridRP3betaKNNCBF,
+        #ScoresHybridP3alphaPureSVD
     ]
 
     from Base.Evaluation.Evaluator import EvaluatorHoldout
 
-    evaluator_validation = EvaluatorHoldout(URM_validation, cutoff_list=[10])
+    evaluator_validation = EvaluatorHoldout(URM_validation, cutoff_list=[12])
     evaluator_test = EvaluatorHoldout(URM_test, cutoff_list=[5, 10])
 
 
     runParameterSearch_Hybrid_partial = partial(runParameterSearch_Hybrid,
-                                                       URM_train = URM_train,
+                                                       URM_train = URM_ICM_train,
                                                        ICM_train = ICM_train,
                                                        metric_to_optimize = "MAP",
                                                        n_cases = 150,

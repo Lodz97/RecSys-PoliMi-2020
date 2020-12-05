@@ -8,6 +8,7 @@ Created on 15/04/18
 
 from Base.Recommender_utils import check_matrix, similarityMatrixTopK
 from Base.BaseSimilarityMatrixRecommender import BaseItemSimilarityMatrixRecommender
+from sklearn.preprocessing import normalize
 
 
 
@@ -31,6 +32,8 @@ class ItemKNNSimilarityHybridRecommender(BaseItemSimilarityMatrixRecommender):
         # CSR is faster during evaluation
         self.Similarity_1 = check_matrix(Similarity_1.copy(), 'csr')
         self.Similarity_2 = check_matrix(Similarity_2.copy(), 'csr')
+        #self.Similarity_1 = normalize(self.Similarity_1, axis=1, norm='l1')
+        #self.Similarity_2 = normalize(self.Similarity_2, axis=1, norm='l1')
 
 
     def fit(self, topK=100, alpha = 0.5):

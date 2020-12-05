@@ -69,3 +69,10 @@ def load_icm_asset():
 
     return csr_matrix
 
+def load_urm_icm():
+    urm, _, _ = load_urm()
+    icm = load_icm_asset()
+    urm_icm = sps.vstack([urm, icm.T])
+    urm_icm = urm_icm.tocsr()
+
+    return urm_icm
