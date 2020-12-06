@@ -37,8 +37,9 @@ class ItemKNNScoresHybridRecommender(BaseItemSimilarityMatrixRecommender):
         mean2 = np.mean(item_scores2)
         std1 = np.std(item_scores1)
         std2 = np.std(item_scores2)
-        item_scores1 = (item_scores1 - mean1) / std1
-        item_scores2 = (item_scores2 - mean2) / std2
+        if std1 != 0 and std2 != 0:
+            item_scores1 = (item_scores1 - mean1) / std1
+            item_scores2 = (item_scores2 - mean2) / std2
         # print(item_scores1)
         # print(item_scores2)
 

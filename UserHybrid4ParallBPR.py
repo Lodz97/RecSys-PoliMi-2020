@@ -18,9 +18,6 @@ import ScoresHybrid3Recommender
 import ScoresHybridP3alphaKNNCBF
 import ScoresHybridP3alphaPureSVD
 import RankingHybrid
-import ScoresHybridSpecialized
-import ScoresHybridSpecializedCold
-import ScoresHybridSpecializedFusion
 import CreateCSV
 from sklearn.preprocessing import normalize
 from scipy import sparse as sps
@@ -28,17 +25,6 @@ from Utils.PoolWithSubprocess import PoolWithSubprocess
 import multiprocessing
 from functools import partial
 import time
-
-
-def augment_with_best_recommended_items(urm: sps.csr_matrix, rec, users, cutoff, value=0.5):
-    augmented_urm = urm.tolil(copy=True).astype(np.float)
-    for user in users:
-        recommended_items = rec.recommend(user, cutoff=cutoff)
-        for item in recommended_items:
-            augmented_urm[user, item] += value
-
-    # Return the augmented urm
-    return augmented_urm.tocsr()
 
 
 def fitRec(rec_args_name):
@@ -129,10 +115,9 @@ if __name__ == '__main__':
     target_ids = RecSys2020Reader.load_target()
 
     #np.random.seed(12341)
-    URM_train, URM_test = train_test_holdout(URM_all, train_perc=0.998)
+    URM_train, URM_test = train_test_holdout(URM_all, train_perc=0.80)
     # ICM_train, ICM_test = train_test_holdout(ICM_all, train_perc=0.995)
     evaluator_validation = EvaluatorHoldout(URM_test, cutoff_list=[10], exclude_seen=True)
-    URM_train = URM_all
     ICM_train = ICM_all
 
     URM_ICM_train = sps.vstack([URM_train, ICM_all.T])
@@ -198,7 +183,7 @@ if __name__ == '__main__':
     # hyb6x_args = {"topK_P": 954, "alpha_P": 0.43832289495670274, "normalize_similarity_P": False, "topK": 628,
     #              "shrink": 941, "similarity": "cosine", "normalize": True, "alpha": 0.9643109232916722,
     #              "feature_weighting": "BM25"}
-    # Small MAP improvement over previous on param search, confirmed, hyb6x(v2) of Kaggle MAP 0.09159
+    # Small MAP improvement over previous on param search, confirmed, # hyb6x(v2) of Kaggle MAP 0.09159
     hyb6x_args = {"topK_P": 717, "alpha_P": 0.4864819897070818, "normalize_similarity_P": False, "topK": 707,
                   "shrink": 0,
                   "similarity": "tversky", "normalize": False, "alpha": 0.8708660354719004,
@@ -240,57 +225,35 @@ if __name__ == '__main__':
             hyb6y = el[0]
 
     pureSVD = PureSVDRecommender.PureSVDRecommender(URM_train)
-    pureSVD.fit(num_factors=300)
+    pureSVD.fit(num_factors=500)
 
-    #userKNNCF = UserKNNCFRecommender.UserKNNCFRecommender(URM_ICM_train)
-    #userKNNCF.fit(**{"topK": 131, "shrink": 2, "similarity": "cosine", "normalize": True})
+    bpr = SLIM_BPR_Cython(URM_train, recompile_cython=False)
+    bpr.fit(**{"topK": 1000, "epochs": 130, "symmetric": False, "sgd_mode": "adagrad", "lambda_i": 1e-05,
+               "lambda_j": 0.01, "learning_rate": 0.0001})
 
-    hyb_warm = ScoresHybridSpecialized.ScoresHybridSpecialized(URM_ICM_train, URM_ICM_train.T)
-    hyb_warm.fit(**{"topK_P": 892, "alpha_P": 0.41430016915404455, "normalize_similarity_P": False, "topK": 139,
-               "shrink": 347, "similarity": "cosine", "normalize": False, "alpha": 0.39545097689149167,
-               "feature_weighting": "BM25"})
-    hyb_cold = ScoresHybridSpecializedCold.ScoresHybridSpecializedCold(URM_ICM_train, URM_ICM_train.T)
-    hyb_cold.fit(**{"topK_P": 498, "alpha_P": 0.39235154382987336, "normalize_similarity_P": False, "topK": 650,
-                    "shrink": 2, "similarity": "tanimoto", "normalize": True, "alpha": 0.614607984325037,
-                    "feature_weighting": "TF-IDF"})
-
-
+    hyb = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, bpr, itemKNNCBF)
+    hyb.fit(alpha=0.5)
 
     #hyb2 = ItemKNNSimilarityHybridRecommender.ItemKNNSimilarityHybridRecommender(URM_train, itemKNNCBF.W_sparse,
     #                                                                             p3alpha.W_sparse)
     #hyb2.fit(topK=1000)
-    hyb2 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, p3alpha, itemKNNCBF)
+    hyb2 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, itemKNNCBF, p3alpha)
     hyb2.fit(alpha=0.5)
 
     # Kaggle MAP 0.08667
-    hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, p3alpha, p3alpha)
+    hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb, hyb2)
     hyb3.fit(alpha=0.5)
 
     #hyb5 = ScoresHybrid3Recommender.ScoresHybrid3Recommender(URM_train, itemKNNCF, userKNNCF, itemKNNCBF)
     #hyb5.fit(beta=0.3)
 
     # Kaggle MAP 0.09159 hyb6x(v2) + hyb5 (tried alpha 0.4 and 0.6, just small changes, test only as last resort)
-    hyb6 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_cold, hyb5)
+    hyb6 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb6x, hyb5)
     hyb6.fit(alpha=0.5)
     #hyb7x = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb6y, hyb5)
     #hyb7x.fit(alpha=0.5)
-
-    ''' Enrich URM wirh best scores, fail
-    URM_train = augment_with_best_recommended_items(URM_train, hyb6, user_id_unique, 1, 0.01)
-    URM_ICM_train = sps.vstack([URM_train, ICM_all.T])
-    URM_ICM_train = URM_ICM_train.tocsr()
-    hyb6z = ScoresHybridP3alphaKNNCBF.ScoresHybridP3alphaKNNCBF(URM_ICM_train, ICM_train)
-    hyb6z.fit(**{"topK_P": 717, "alpha_P": 0.4864819897070818, "normalize_similarity_P": False, "topK": 707,
-                 "shrink": 0, "similarity": "tversky", "normalize": False, "alpha": 0.8708660354719004,
-                 "feature_weighting": "TF-IDF"})'''
-
     hyb7 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb6x, hyb5)
-    hyb7.fit(alpha=0.5)
-    hyb7x = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_warm, hyb5)
-    hyb7x.fit(alpha=0.5)
-    # Kaggle MAP 0.09466
-    hyb = ScoresHybridSpecializedFusion.ScoresHybridSpecializedFusion(URM_ICM_train, hyb6, hyb7x)
-
+    hyb7.fit(alpha=0.6)
 
 
     MAP_p3alpha_per_group = []
@@ -307,12 +270,9 @@ if __name__ == '__main__':
     args = {"block_size": block_size, "profile_length": profile_length, "sorted_users": sorted_users, "cutoff": cutoff,
             "URM_test": URM_test, "hyb": hyb, "hyb2": hyb2, "hyb3": hyb3, "hyb5": hyb5, "hyb6": hyb6, "hyb7": hyb7}
 
-    pool = PoolWithSubprocess(processes=groups, maxtasksperchild=1)
     compute_group_MAP_partial = partial(compute_group_MAP, args)
-    resultList = pool.map(compute_group_MAP_partial, range(0, groups))
-    pool.close()
-    pool.join()
-    for el in resultList:
+    for i in range(0, groups):
+        el = compute_group_MAP_partial(i)
         MAP_hyb_per_group.append(el[0])
         MAP_hyb2_per_group.append(el[1])
         MAP_hyb3_per_group.append(el[2])
@@ -340,16 +300,15 @@ if __name__ == '__main__':
 
     print(l_list)
     evaluator_validation = EvaluatorHoldout(URM_test, cutoff_list=[10], exclude_seen=True)
-    pool = PoolWithSubprocess(processes=6, maxtasksperchild=1)
-    hyb_list = [hyb, hyb2, hyb3, hyb5, hyb6, hyb7]
-    resultList = pool.map(evaluator_validation.evaluateRecommender, hyb_list)
-    pool.close()
-    pool.join()
-    for el in resultList:
-        print(el)
-    item_list = hyb.recommend(target_ids, cutoff=10)
-    CreateCSV.create_csv(target_ids, item_list, 'Hyb_URM_ICM_cold_warm')
-    '''item_list = hyb2.recommend(target_ids, cutoff=10)
+    print(evaluator_validation.evaluateRecommender(hyb))
+    print(evaluator_validation.evaluateRecommender(hyb2))
+    print(evaluator_validation.evaluateRecommender(hyb3))
+    print(evaluator_validation.evaluateRecommender(hyb5))
+    print(evaluator_validation.evaluateRecommender(hyb6))
+    print(evaluator_validation.evaluateRecommender(hyb7))
+    '''item_list = hyb6.recommend(target_ids, cutoff=10)
+    CreateCSV.create_csv(target_ids, item_list, 'Hyb_URM_ICM_tuned')
+    item_list = hyb2.recommend(target_ids, cutoff=10)
     CreateCSV.create_csv(target_ids, item_list, 'Hyb2')
     item_list = hyb6.recommend(target_ids, cutoff=10)
     CreateCSV.create_csv(target_ids, item_list, 'Hyb_URM_ICM')'''

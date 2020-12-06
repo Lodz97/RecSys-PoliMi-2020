@@ -60,8 +60,8 @@ if __name__ == '__main__':
                                                                       users_in_group_p_len.min(),
                                                                       users_in_group_p_len.max()))
 
-    p3alpha = P3alphaRecommender.P3alphaRecommender(URM_train)
-    p3alpha.fit(**{"topK": 991, "alpha": 0.4705816992313091, "normalize_similarity": False})
+    #p3alpha = P3alphaRecommender.P3alphaRecommender(URM_train)
+    #p3alpha.fit(**{"topK": 991, "alpha": 0.4705816992313091, "normalize_similarity": False})
 
     itemKNNCF = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_train)
     itemKNNCF.fit(**{"topK": 1000, "shrink": 732, "similarity": "cosine", "normalize": True,
@@ -73,21 +73,27 @@ if __name__ == '__main__':
     pureSVD = PureSVDRecommender.PureSVDRecommender(URM_train)
     pureSVD.fit(num_factors=340)
 
-    hyb = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, pureSVD, p3alpha)
+    bpr = SLIM_BPR_Cython(URM_train, recompile_cython=False)
+    bpr.fit(**{"topK": 1000, "epochs": 130, "symmetric": False, "sgd_mode": "adagrad", "lambda_i": 1e-05,
+               "lambda_j": 0.01, "learning_rate": 0.0001})
+
+    hyb = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, pureSVD, pureSVD)
     hyb.fit(alpha=0.5)
 
-    hyb2 = ItemKNNSimilarityHybridRecommender.ItemKNNSimilarityHybridRecommender(URM_train, itemKNNCBF.W_sparse,
-                                                                                 p3alpha.W_sparse)
-    hyb2.fit(topK=1600)
+    #hyb2 = ItemKNNSimilarityHybridRecommender.ItemKNNSimilarityHybridRecommender(URM_train, itemKNNCBF.W_sparse,
+    #                                                                             p3alpha.W_sparse)
+    #hyb2.fit(topK=1600)
+    hyb2 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, bpr, bpr)
+    hyb2.fit(alpha=0.5)
 
     # Kaggle MAP 0.08667
-    hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb, hyb2)
+    hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, itemKNNCBF, itemKNNCBF)
     hyb3.fit(alpha=0.5)
 
     #hyb5 = ScoresHybrid3Recommender.ScoresHybrid3Recommender(URM_train, itemKNNCF, userKNNCF, itemKNNCBF)
     #hyb5.fit(beta=0.3)
 
-    hyb5 = ScoresHybridP3alphaKNNCBF.ScoresHybridP3alphaKNNCBF(URM_train, ICM_train)
+    '''hyb5 = ScoresHybridP3alphaKNNCBF.ScoresHybridP3alphaKNNCBF(URM_train, ICM_train)
     hyb6x = ScoresHybridP3alphaKNNCBF.ScoresHybridP3alphaKNNCBF(URM_ICM_train, ICM_train)
     hyb6y = ScoresHybridP3alphaKNNCBF.ScoresHybridP3alphaKNNCBF(URM_ICM_train, ICM_train)
     # Kaggle MAP 0.08856
@@ -110,7 +116,7 @@ if __name__ == '__main__':
     hyb6 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb6x, hyb5)
     hyb6.fit(alpha=0.5)
     hyb7 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb6y, hyb5)
-    hyb7.fit(alpha=0.5)
+    hyb7.fit(alpha=0.5)'''
 
 
     MAP_p3alpha_per_group = []
@@ -167,14 +173,14 @@ if __name__ == '__main__':
         results, _ = evaluator_test.evaluateRecommender(hyb3)
         MAP_hyb3_per_group.append(results[cutoff]["MAP"])
 
-        results, _ = evaluator_test.evaluateRecommender(hyb5)
+        '''results, _ = evaluator_test.evaluateRecommender(hyb5)
         MAP_hyb5_per_group.append(results[cutoff]["MAP"])
 
         results, _ = evaluator_test.evaluateRecommender(hyb6)
         MAP_hyb6_per_group.append(results[cutoff]["MAP"])
 
         results, _ = evaluator_test.evaluateRecommender(hyb7)
-        MAP_hyb7_per_group.append(results[cutoff]["MAP"])
+        MAP_hyb7_per_group.append(results[cutoff]["MAP"])'''
 
     import matplotlib.pyplot as pyplot
 
@@ -185,9 +191,9 @@ if __name__ == '__main__':
     pyplot.plot(MAP_hyb_per_group, label="hyb")
     pyplot.plot(MAP_hyb2_per_group, label="hyb2")
     pyplot.plot(MAP_hyb3_per_group, label="hyb3")
-    pyplot.plot(MAP_hyb5_per_group, label="hyb5")
+    '''pyplot.plot(MAP_hyb5_per_group, label="hyb5")
     pyplot.plot(MAP_hyb6_per_group, label="hyb6")
-    pyplot.plot(MAP_hyb7_per_group, label="hyb7")
+    pyplot.plot(MAP_hyb7_per_group, label="hyb7")'''
     pyplot.ylabel('MAP')
     pyplot.xlabel('User Group')
     pyplot.legend()
@@ -198,9 +204,9 @@ if __name__ == '__main__':
     print(evaluator_validation.evaluateRecommender(hyb))
     print(evaluator_validation.evaluateRecommender(hyb2))
     print(evaluator_validation.evaluateRecommender(hyb3))
-    print(evaluator_validation.evaluateRecommender(hyb5))
+    '''print(evaluator_validation.evaluateRecommender(hyb5))
     print(evaluator_validation.evaluateRecommender(hyb6))
-    print(evaluator_validation.evaluateRecommender(hyb7))
+    print(evaluator_validation.evaluateRecommender(hyb7))'''
     '''item_list = hyb.recommend(target_ids, cutoff=10)
     CreateCSV.create_csv(target_ids, item_list, 'Hyb')
     item_list = hyb2.recommend(target_ids, cutoff=10)

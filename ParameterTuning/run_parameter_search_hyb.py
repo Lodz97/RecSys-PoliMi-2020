@@ -19,6 +19,8 @@ Created on 22/11/17
 from ScoresHybridP3alphaKNNCBF import ScoresHybridP3alphaKNNCBF
 from ScoresHybridRP3betaKNNCBF import ScoresHybridRP3betaKNNCBF
 from ScoresHybridP3alphaPureSVD import ScoresHybridP3alphaPureSVD
+from ScoresHybridSpecialized import ScoresHybridSpecialized
+from ScoresHybridSpecializedCold import ScoresHybridSpecializedCold
 
 
 ######################################################################
@@ -59,7 +61,8 @@ def runParameterSearch_Hybrid(recommender_class, URM_train, ICM_train, URM_train
 
        ##########################################################################################################
 
-        if recommender_class in [ScoresHybridP3alphaKNNCBF, ScoresHybridRP3betaKNNCBF]:
+        if recommender_class in [ScoresHybridP3alphaKNNCBF, ScoresHybridRP3betaKNNCBF, ScoresHybridSpecialized,
+                                 ScoresHybridSpecializedCold]:
 
             hyperparameters_range_dictionary = {}
             hyperparameters_range_dictionary["topK_P"] = Integer(5, 1000)
@@ -170,7 +173,7 @@ def read_data_split_and_search():
     URM_ICM_train = URM_ICM_train.tocsr()
 
 
-    output_folder_path = "ParamResultsExperiments/SKOPT_Hyb_P3alpha_KNNCBF_URM_ICM"
+    output_folder_path = "ParamResultsExperiments/SKOPT_Hyb_P3alpha_KNNCBF_URM_ICM_specialized_"
     output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S/')
 
 
@@ -180,20 +183,22 @@ def read_data_split_and_search():
 
 
     hybrid_algorithm_list = [
-        ScoresHybridP3alphaKNNCBF,
+        #ScoresHybridP3alphaKNNCBF,
         #ScoresHybridRP3betaKNNCBF,
-        #ScoresHybridP3alphaPureSVD
+        #ScoresHybridP3alphaPureSVD,
+        ScoresHybridSpecialized,
+        ScoresHybridSpecializedCold
     ]
 
     from Base.Evaluation.Evaluator import EvaluatorHoldout
 
-    evaluator_validation = EvaluatorHoldout(URM_validation, cutoff_list=[12])
+    evaluator_validation = EvaluatorHoldout(URM_validation, cutoff_list=[10])
     evaluator_test = EvaluatorHoldout(URM_test, cutoff_list=[5, 10])
 
 
     runParameterSearch_Hybrid_partial = partial(runParameterSearch_Hybrid,
                                                        URM_train = URM_ICM_train,
-                                                       ICM_train = ICM_train,
+                                                       ICM_train = URM_ICM_train.T,
                                                        metric_to_optimize = "MAP",
                                                        n_cases = 150,
                                                        n_random_starts=50,
