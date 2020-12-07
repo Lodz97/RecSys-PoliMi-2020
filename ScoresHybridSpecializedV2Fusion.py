@@ -40,13 +40,13 @@ class ScoresHybridSpecializedV2Fusion(BaseItemSimilarityMatrixRecommender):
             for i in range(0, len(user_id_array)):
                 if profile_length[user_id_array[i]] < 3:
                     res[0][i] = res1[0][i]
-                elif profile_length[user_id_array[i]] > 6:
+                elif profile_length[user_id_array[i]] >= 6:
                     res[0][i] = res3[0][i]
         else:
             for i in range(0, len(user_id_array)):
                 if profile_length[user_id_array[i]] < 3:
                     res[i] = res1[i]
-                elif profile_length[user_id_array[i]] > 6:
+                elif profile_length[user_id_array[i]] >= 6:
                     res[i] = res3[i]
 
         return res

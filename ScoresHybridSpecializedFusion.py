@@ -11,12 +11,13 @@ class ScoresHybridSpecializedFusion(BaseItemSimilarityMatrixRecommender):
 
     RECOMMENDER_NAME = "ScoresHybridSpecializedFusion"
 
-    def __init__(self, URM_train, Recommender_cold, Recommender_warm):
+    def __init__(self, URM_train, Recommender_cold, Recommender_warm, thereshold):
         super(ScoresHybridSpecializedFusion, self).__init__(URM_train)
 
         self.URM_train = check_matrix(URM_train.copy(), 'csr')
         self.Recommender_cold = Recommender_cold
         self.Recommender_warm = Recommender_warm
+        self.thereshold = thereshold
 
     def recommend(self, user_id_array, cutoff=None, remove_seen_flag=True, items_to_compute=None,
                   remove_top_pop_flag=False, remove_custom_items_flag=False, return_scores=False):
@@ -32,11 +33,11 @@ class ScoresHybridSpecializedFusion(BaseItemSimilarityMatrixRecommender):
         res = res2
         if return_scores:
             for i in range(0, len(user_id_array)):
-                if profile_length[user_id_array[i]] < 6:
+                if profile_length[user_id_array[i]] < self.thereshold:
                     res[0][i] = res1[0][i]
         else:
             for i in range(0, len(user_id_array)):
-                if profile_length[user_id_array[i]] < 6:
+                if profile_length[user_id_array[i]] < self.thereshold:
                     res[i] = res1[i]
 
         return res

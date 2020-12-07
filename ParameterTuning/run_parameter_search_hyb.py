@@ -24,6 +24,8 @@ from ScoresHybridSpecializedCold import ScoresHybridSpecializedCold
 from ScoresHybridSpecializedV2Cold import ScoresHybridSpecializedV2Cold
 from ScoresHybridSpecializedV2Mid import ScoresHybridSpecializedV2Mid
 from ScoresHybridSpecializedV2Warm import ScoresHybridSpecializedV2Warm
+from ScoresHybridSpecializedV2Mid12 import ScoresHybridSpecializedV2Mid12
+from ScoresHybridSpecializedV2Warm12 import ScoresHybridSpecializedV2Warm12
 
 
 ######################################################################
@@ -66,7 +68,8 @@ def runParameterSearch_Hybrid(recommender_class, URM_train, ICM_train, URM_train
 
         if recommender_class in [ScoresHybridP3alphaKNNCBF, ScoresHybridRP3betaKNNCBF, ScoresHybridSpecialized,
                                  ScoresHybridSpecializedCold, ScoresHybridSpecializedV2Cold,
-                                 ScoresHybridSpecializedV2Mid, ScoresHybridSpecializedV2Warm]:
+                                 ScoresHybridSpecializedV2Mid, ScoresHybridSpecializedV2Warm,
+                                 ScoresHybridSpecializedV2Mid12, ScoresHybridSpecializedV2Warm12]:
 
             hyperparameters_range_dictionary = {}
             hyperparameters_range_dictionary["topK_P"] = Integer(5, 1500)
@@ -177,7 +180,7 @@ def read_data_split_and_search():
     URM_ICM_train = URM_ICM_train.tocsr()
 
 
-    output_folder_path = "ParamResultsExperiments/SKOPT_Hyb_P3alpha_KNNCBF_URM_ICM_specialized_V2_3-6"
+    output_folder_path = "ParamResultsExperiments/SKOPT_Hyb_P3alpha_KNNCBF_URM_ICM_specialized_V2_12"
     output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S/')
 
 
@@ -192,9 +195,11 @@ def read_data_split_and_search():
         #ScoresHybridP3alphaPureSVD,
         #ScoresHybridSpecialized,
         #ScoresHybridSpecializedCold,
-        ScoresHybridSpecializedV2Cold,
-        ScoresHybridSpecializedV2Mid,
+        #ScoresHybridSpecializedV2Cold,
+        #ScoresHybridSpecializedV2Mid,
         #ScoresHybridSpecializedV2Warm
+        ScoresHybridSpecializedV2Mid12,
+        ScoresHybridSpecializedV2Warm12
     ]
 
     from Base.Evaluation.Evaluator import EvaluatorHoldout
@@ -207,8 +212,8 @@ def read_data_split_and_search():
                                                        URM_train = URM_ICM_train,
                                                        ICM_train = URM_ICM_train.T,
                                                        metric_to_optimize = "MAP",
-                                                       n_cases = 70,
-                                                       n_random_starts=20,
+                                                       n_cases = 100,
+                                                       n_random_starts=30,
                                                        evaluator_validation_earlystopping = evaluator_validation,
                                                        evaluator_validation = evaluator_validation,
                                                        evaluator_test = evaluator_test,

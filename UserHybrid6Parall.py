@@ -22,6 +22,7 @@ import ScoresHybridSpecialized
 import ScoresHybridSpecializedCold
 import ScoresHybridSpecializedFusion
 import ScoresHybridSpecializedV2Cold, ScoresHybridSpecializedV2Mid, ScoresHybridSpecializedV2Warm
+import ScoresHybridSpecializedV2Mid12, ScoresHybridSpecializedV2Warm12
 import ScoresHybridSpecializedV2Fusion
 import CreateCSV
 from sklearn.preprocessing import normalize
@@ -130,10 +131,11 @@ if __name__ == '__main__':
     target_ids = RecSys2020Reader.load_target()
 
     #np.random.seed(12341)
-    URM_train, URM_test = train_test_holdout(URM_all, train_perc=0.80)
+    URM_train, URM_test = train_test_holdout(URM_all, train_perc=0.998)
     # ICM_train, ICM_test = train_test_holdout(ICM_all, train_perc=0.995)
     evaluator_validation = EvaluatorHoldout(URM_test, cutoff_list=[10], exclude_seen=True)
     ICM_train = ICM_all
+    URM_train = URM_all
 
     URM_ICM_train = sps.vstack([URM_train, ICM_all.T])
     URM_ICM_train = URM_ICM_train.tocsr()
@@ -162,7 +164,8 @@ if __name__ == '__main__':
                                                                       users_in_group_p_len.max()))
 
     hyb_warm = ScoresHybridSpecialized.ScoresHybridSpecialized(URM_ICM_train, URM_ICM_train.T)
-    hyb_warmV2 = ScoresHybridSpecializedV2Warm.ScoresHybridSpecializedV2Warm(URM_ICM_train, URM_ICM_train.T)
+    #hyb_warmV2 = ScoresHybridSpecializedV2Warm.ScoresHybridSpecializedV2Warm(URM_ICM_train, URM_ICM_train.T)
+    hyb_warmV2 = ScoresHybridSpecializedV2Warm12.ScoresHybridSpecializedV2Warm12(URM_ICM_train, URM_ICM_train.T)
     # Warm of Kaggle MAP 0.09466
     hyb_warm_args = {"topK_P": 1000, "alpha_P": 0.587663346034695, "normalize_similarity_P": False, "topK": 1000,
                     "shrink": 1000, "similarity": "cosine", "normalize": True, "alpha": 0.5582200212368523,
@@ -170,8 +173,13 @@ if __name__ == '__main__':
     #hyb_warmV2_args = {"topK_P": 1018, "alpha_P": 0.3254255658194996, "normalize_similarity_P": False, "topK": 1359,
     #                   "shrink": 872, "similarity": "cosine", "normalize": True, "alpha": 0.07962973524067597,
     #                   "feature_weighting": "TF-IDF"}
-    hyb_warmV2_args = {"topK_P": 1500, "alpha_P": 0.5354642273966579, "normalize_similarity_P": False, "topK": 1500,
+    # Args 3.5 - 9,5
+    '''hyb_warmV2_args = {"topK_P": 1500, "alpha_P": 0.5354642273966579, "normalize_similarity_P": False, "topK": 1500,
                        "shrink": 1500, "similarity": "asymmetric", "normalize": True, "alpha": 0.5071144494238963,
+                       "feature_weighting": "BM25"}'''
+    # Args 6 - 12
+    hyb_warmV2_args = {"topK_P": 1238, "alpha_P": 0.580501466821829, "normalize_similarity_P": False, "topK": 1043,
+                       "shrink": 163, "similarity": "asymmetric", "normalize": False, "alpha": 0.25081946305309705,
                        "feature_weighting": "BM25"}
     hyb_cold = ScoresHybridSpecializedCold.ScoresHybridSpecializedCold(URM_ICM_train, URM_ICM_train.T)
     hyb_coldV2 = ScoresHybridSpecializedV2Cold.ScoresHybridSpecializedV2Cold(URM_ICM_train, URM_ICM_train.T)
@@ -182,16 +190,23 @@ if __name__ == '__main__':
     #hyb_coldV2_args = {"topK_P": 336, "alpha_P": 0.2536166604627648, "normalize_similarity_P": False, "topK": 964,
     #                   "shrink": 70, "similarity": "tanimoto", "normalize": True, "alpha": 0.7812096637994604,
     #                   "feature_weighting": "none"}
-    hyb_coldV2_args = {"topK_P": 1405, "alpha_P": 0.07528651890973294, "normalize_similarity_P": False, "topK": 44,
-                       "shrink": 1423, "similarity": "asymmetric", "normalize": False, "alpha": 0.9479090617286697,
+    # Args 3-6
+    hyb_coldV2_args = {"topK_P": 162, "alpha_P": 0.3494407240567288, "normalize_similarity_P": False, "topK": 1029,
+                       "shrink": 1286, "similarity": "tanimoto", "normalize": True, "alpha": 0.8553335288604262,
                        "feature_weighting": "BM25"}
-    hyb_midV2 = ScoresHybridSpecializedV2Mid.ScoresHybridSpecializedV2Mid(URM_ICM_train, URM_ICM_train.T)
+    #hyb_midV2 = ScoresHybridSpecializedV2Mid.ScoresHybridSpecializedV2Mid(URM_ICM_train, URM_ICM_train.T)
+    hyb_midV2 = ScoresHybridSpecializedV2Mid12.ScoresHybridSpecializedV2Mid12(URM_ICM_train, URM_ICM_train.T)
     #hyb_midV2_args = {"topK_P": 916, "alpha_P": 0.5384914601433225, "normalize_similarity_P": False, "topK": 427,
     #                  "shrink": 657, "similarity": "tversky", "normalize": False, "alpha": 0.9085344016622902,
     #                  "feature_weighting": "TF-IDF"}
-    hyb_midV2_args = {"topK_P": 916, "alpha_P": 0.5384914601433225, "normalize_similarity_P": False, "topK": 427,
-                      "shrink": 657, "similarity": "tversky", "normalize": False, "alpha": 0.9085344016622902,
-                      "feature_weighting": "TF-IDF"}
+    # Args 3-6
+    '''hyb_midV2_args = {"topK_P": 1372, "alpha_P": 0.024353757325971788, "normalize_similarity_P": False, "topK": 1348,
+                      "shrink": 1475, "similarity": "asymmetric", "normalize": False, "alpha": 0.3755995713852187,
+                      "feature_weighting": "TF-IDF"}'''
+    # Args 6 - 12
+    hyb_midV2_args = {"topK_P": 158, "alpha_P": 0.39570316791967797, "normalize_similarity_P": False, "topK": 901,
+                      "shrink": 942, "similarity": "cosine", "normalize": True, "alpha": 0.49140747439504906,
+                      "feature_weighting": "none"}
 
     rec_list.append(hyb_cold)
     arg_list.append(hyb_cold_args)
@@ -292,17 +307,20 @@ if __name__ == '__main__':
     hyb7x = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_warm, hyb5)
     hyb7x.fit(alpha=0.5)
     # Kaggle MAP 0.09466
-    hyb = ScoresHybridSpecializedFusion.ScoresHybridSpecializedFusion(URM_ICM_train, hyb6, hyb7x)
+    hyb = ScoresHybridSpecializedFusion.ScoresHybridSpecializedFusion(URM_ICM_train, hyb6, hyb7x, 6)
 
-    hyb2 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_midV2, hyb_midV2)
+    hyb2 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_midV2, hyb5)
     hyb2.fit(alpha=0.5)
+    hyb2z = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_midV2, hyb5)
+    hyb2z.fit(alpha=0.5)
     hyb2x = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_coldV2, hyb5)
     hyb2x.fit(alpha=0.5)
     hyb2y = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_warmV2, hyb5)
     hyb2y.fit(alpha=0.5)
-    #hyb3 = ScoresHybridSpecializedV2Fusion.ScoresHybridSpecializedV2Fusion(URM_ICM_train, hyb2x, hyb2, hyb2y)
-    hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_coldV2, hyb_coldV2)
-    hyb3.fit(alpha=0.5)
+    #hyb3 = ScoresHybridSpecializedV2Fusion.ScoresHybridSpecializedV2Fusion(URM_ICM_train, hyb2x, hyb2z, hyb2y)
+    hyb3 = ScoresHybridSpecializedFusion.ScoresHybridSpecializedFusion(URM_ICM_train, hyb, hyb2y, 12)
+    #hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_warmV2, hyb5)
+    #hyb3.fit(alpha=0.5)
 
 
     MAP_p3alpha_per_group = []
@@ -360,7 +378,7 @@ if __name__ == '__main__':
     for el in resultList:
         print(el)
     item_list = hyb3.recommend(target_ids, cutoff=10)
-    CreateCSV.create_csv(target_ids, item_list, 'Hyb_URM_ICM_cold_warm_V2')
+    CreateCSV.create_csv(target_ids, item_list, 'Hyb_URM_ICM_cold_warm_V2_warmCutoff12')
     '''item_list = hyb2.recommend(target_ids, cutoff=10)
     CreateCSV.create_csv(target_ids, item_list, 'Hyb2')
     item_list = hyb6.recommend(target_ids, cutoff=10)
