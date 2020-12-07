@@ -21,6 +21,8 @@ import RankingHybrid
 import ScoresHybridSpecialized
 import ScoresHybridSpecializedCold
 import ScoresHybridSpecializedFusion
+import ScoresHybridSpecializedV2Cold, ScoresHybridSpecializedV2Mid, ScoresHybridSpecializedV2Warm
+import ScoresHybridSpecializedV2Fusion
 import CreateCSV
 from sklearn.preprocessing import normalize
 from scipy import sparse as sps
@@ -60,7 +62,7 @@ def compute_group_MAP(args, group_id):
     hyb3 = args["hyb3"]
     hyb5 = args["hyb5"]
     hyb6 = args["hyb6"]
-    hyb7 = args["hyb7"]
+    #hyb7 = args["hyb7"]
 
     MAP_hyb_per_group = []
     MAP_hyb2_per_group = []
@@ -113,11 +115,10 @@ def compute_group_MAP(args, group_id):
     results, _ = evaluator_test.evaluateRecommender(hyb6)
     MAP_hyb6_per_group.append(results[cutoff]["MAP"])
 
-    results, _ = evaluator_test.evaluateRecommender(hyb7)
-    MAP_hyb7_per_group.append(results[cutoff]["MAP"])
+    #results, _ = evaluator_test.evaluateRecommender(hyb7)
+    #MAP_hyb7_per_group.append(results[cutoff]["MAP"])
 
-    return [MAP_hyb_per_group, MAP_hyb2_per_group, MAP_hyb3_per_group, MAP_hyb5_per_group, MAP_hyb6_per_group,
-            MAP_hyb7_per_group]
+    return [MAP_hyb_per_group, MAP_hyb2_per_group, MAP_hyb3_per_group, MAP_hyb5_per_group, MAP_hyb6_per_group]
 
 
 
@@ -160,29 +161,57 @@ if __name__ == '__main__':
                                                                       users_in_group_p_len.min(),
                                                                       users_in_group_p_len.max()))
 
-    p3alpha = P3alphaRecommender.P3alphaRecommender(URM_train)
-    p3alpha_args = {"topK": 991, "alpha": 0.4705816992313091, "normalize_similarity": False}
-    rec_list.append(p3alpha)
-    arg_list.append(p3alpha_args)
-    name_list.append("p3alpha")
-
-    itemKNNCF = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_train)
-    itemKNNCF_args = {"topK": 1000, "shrink": 732, "similarity": "cosine", "normalize": True,
+    hyb_warm = ScoresHybridSpecialized.ScoresHybridSpecialized(URM_ICM_train, URM_ICM_train.T)
+    hyb_warmV2 = ScoresHybridSpecializedV2Warm.ScoresHybridSpecializedV2Warm(URM_ICM_train, URM_ICM_train.T)
+    # Warm of Kaggle MAP 0.09466
+    hyb_warm_args = {"topK_P": 1000, "alpha_P": 0.587663346034695, "normalize_similarity_P": False, "topK": 1000,
+                    "shrink": 1000, "similarity": "cosine", "normalize": True, "alpha": 0.5582200212368523,
+                    "feature_weighting": "BM25"}
+    #hyb_warmV2_args = {"topK_P": 1018, "alpha_P": 0.3254255658194996, "normalize_similarity_P": False, "topK": 1359,
+    #                   "shrink": 872, "similarity": "cosine", "normalize": True, "alpha": 0.07962973524067597,
+    #                   "feature_weighting": "TF-IDF"}
+    hyb_warmV2_args = {"topK_P": 1500, "alpha_P": 0.5354642273966579, "normalize_similarity_P": False, "topK": 1500,
+                       "shrink": 1500, "similarity": "asymmetric", "normalize": True, "alpha": 0.5071144494238963,
+                       "feature_weighting": "BM25"}
+    hyb_cold = ScoresHybridSpecializedCold.ScoresHybridSpecializedCold(URM_ICM_train, URM_ICM_train.T)
+    hyb_coldV2 = ScoresHybridSpecializedV2Cold.ScoresHybridSpecializedV2Cold(URM_ICM_train, URM_ICM_train.T)
+    # Cold of Kaggle MAP 0.09466
+    hyb_cold_args = {"topK_P": 1000, "alpha_P": 0.3866334498207009, "normalize_similarity_P": False, "topK": 1000,
+                    "shrink": 0, "similarity": "tanimoto", "normalize": False, "alpha": 0.5373872324033048,
+                    "feature_weighting": "BM25"}
+    #hyb_coldV2_args = {"topK_P": 336, "alpha_P": 0.2536166604627648, "normalize_similarity_P": False, "topK": 964,
+    #                   "shrink": 70, "similarity": "tanimoto", "normalize": True, "alpha": 0.7812096637994604,
+    #                   "feature_weighting": "none"}
+    hyb_coldV2_args = {"topK_P": 1405, "alpha_P": 0.07528651890973294, "normalize_similarity_P": False, "topK": 44,
+                       "shrink": 1423, "similarity": "asymmetric", "normalize": False, "alpha": 0.9479090617286697,
+                       "feature_weighting": "BM25"}
+    hyb_midV2 = ScoresHybridSpecializedV2Mid.ScoresHybridSpecializedV2Mid(URM_ICM_train, URM_ICM_train.T)
+    #hyb_midV2_args = {"topK_P": 916, "alpha_P": 0.5384914601433225, "normalize_similarity_P": False, "topK": 427,
+    #                  "shrink": 657, "similarity": "tversky", "normalize": False, "alpha": 0.9085344016622902,
+    #                  "feature_weighting": "TF-IDF"}
+    hyb_midV2_args = {"topK_P": 916, "alpha_P": 0.5384914601433225, "normalize_similarity_P": False, "topK": 427,
+                      "shrink": 657, "similarity": "tversky", "normalize": False, "alpha": 0.9085344016622902,
                       "feature_weighting": "TF-IDF"}
-    rec_list.append(itemKNNCF)
-    arg_list.append(itemKNNCF_args)
-    name_list.append("itemKNNCF")
 
-    itemKNNCBF = ItemKNNCBFRecommender.ItemKNNCBFRecommender(URM_train, ICM_train)
-    itemKNNCBF_args = {"topK": 700, "shrink": 200, "similarity": 'jaccard', "normalize": True,
-                       "feature_weighting": "TF-IDF"}
-    rec_list.append(itemKNNCBF)
-    arg_list.append(itemKNNCBF_args)
-    name_list.append("itemKNNCBF")
+    rec_list.append(hyb_cold)
+    arg_list.append(hyb_cold_args)
+    name_list.append("hyb_cold")
+    rec_list.append(hyb_coldV2)
+    arg_list.append(hyb_coldV2_args)
+    name_list.append("hyb_coldV2")
+    rec_list.append(hyb_warm)
+    arg_list.append(hyb_warm_args)
+    name_list.append("hyb_warm")
+    rec_list.append(hyb_warmV2)
+    arg_list.append(hyb_warmV2_args)
+    name_list.append("hyb_warmV2")
+    rec_list.append(hyb_midV2)
+    arg_list.append(hyb_midV2_args)
+    name_list.append("hyb_midV2")
 
     hyb5 = ScoresHybridP3alphaKNNCBF.ScoresHybridP3alphaKNNCBF(URM_train, ICM_train)
     hyb6x = ScoresHybridP3alphaKNNCBF.ScoresHybridP3alphaKNNCBF(URM_ICM_train, ICM_train)
-    hyb6y = ScoresHybridP3alphaKNNCBF.ScoresHybridP3alphaKNNCBF(URM_ICM_train, ICM_train)
+    #hyb6y = ScoresHybridP3alphaKNNCBF.ScoresHybridP3alphaKNNCBF(URM_ICM_train, ICM_train)
     # Kaggle MAP 0.08856 and 0.09159
     hyb5_args = {"topK_P": 903, "alpha_P": 0.4108657561671193, "normalize_similarity_P": False, "topK": 448,
                  "shrink": 20,
@@ -206,17 +235,17 @@ if __name__ == '__main__':
     # hyb6y_args = {"topK_P": 1000, "alpha_P": 0.3971126273470195, "normalize_similarity_P": False, "topK": 1000,
     #             "shrink": 0, "similarity": "tversky", "normalize": True, "alpha": 0.6441988996826603,
     #             "feature_weighting": "TF-IDF"}
-    hyb6y_args = {"topK_P": 903, "alpha_P": 0.4108657561671193, "normalize_similarity_P": False, "topK": 448, "shrink": 20,
-                  "similarity": "tversky", "normalize": True, "alpha": 0.6290871066510789, "feature_weighting": "TF-IDF"}
+    #hyb6y_args = {"topK_P": 903, "alpha_P": 0.4108657561671193, "normalize_similarity_P": False, "topK": 448, "shrink": 20,
+    #              "similarity": "tversky", "normalize": True, "alpha": 0.6290871066510789, "feature_weighting": "TF-IDF"}
     rec_list.append(hyb5)
     arg_list.append(hyb5_args)
     name_list.append("hyb5")
-    rec_list.append(hyb6x)
-    arg_list.append(hyb6x_args)
-    name_list.append("hyb6x")
-    rec_list.append(hyb6y)
-    arg_list.append(hyb6y_args)
-    name_list.append("hyb6y")
+    #rec_list.append(hyb6x)
+    #arg_list.append(hyb6x_args)
+    #name_list.append("hyb6x")
+    #rec_list.append(hyb6y)
+    #arg_list.append(hyb6y_args)
+    #name_list.append("hyb6y")
 
     tot_args = zip(rec_list, arg_list, name_list)
     pool = PoolWithSubprocess(processes=int(multiprocessing.cpu_count()-1), maxtasksperchild=1)
@@ -225,56 +254,23 @@ if __name__ == '__main__':
     pool.join()
 
     for el in resultList:
-        if el[1] == "p3alpha":
-            p3alpha = el[0]
-        elif el[1] == "itemKNNCF":
-            itemKNNCF = el[0]
-        elif el[1] == "itemKNNCBF":
-            itemKNNCBF = el[0]
+        if el[1] == "hyb_cold":
+            hyb_cold = el[0]
+        elif el[1] == "hyb_warm":
+            hyb_warm = el[0]
+        elif el[1] == "hyb_coldV2":
+            hyb_coldV2 = el[0]
+        elif el[1] == "hyb_midV2":
+            hyb_midV2 = el[0]
+        elif el[1] == "hyb_warmV2":
+            hyb_warmV2 = el[0]
         elif el[1] == "hyb5":
             hyb5 = el[0]
         elif el[1] == "hyb6x":
             hyb6x = el[0]
-        elif el[1] == "hyb6y":
-            hyb6y = el[0]
 
     pureSVD = PureSVDRecommender.PureSVDRecommender(URM_train)
     pureSVD.fit(num_factors=300)
-
-    #userKNNCF = UserKNNCFRecommender.UserKNNCFRecommender(URM_ICM_train)
-    #userKNNCF.fit(**{"topK": 131, "shrink": 2, "similarity": "cosine", "normalize": True})
-
-    hyb_warm = ScoresHybridSpecialized.ScoresHybridSpecialized(URM_ICM_train, URM_ICM_train.T)
-    # Warm of Kaggle MAP 0.09466
-    #hyb_warm.fit(**{"topK_P": 892, "alpha_P": 0.41430016915404455, "normalize_similarity_P": False, "topK": 139,
-    #           "shrink": 347, "similarity": "cosine", "normalize": False, "alpha": 0.39545097689149167,
-    #           "feature_weighting": "BM25"})
-    hyb_warm.fit(**{"topK_P": 1000, "alpha_P": 0.587663346034695, "normalize_similarity_P": False, "topK": 1000,
-                    "shrink": 1000, "similarity": "cosine", "normalize": True, "alpha": 0.5582200212368523,
-                    "feature_weighting": "BM25"})
-    hyb_cold = ScoresHybridSpecializedCold.ScoresHybridSpecializedCold(URM_ICM_train, URM_ICM_train.T)
-    # Cold of Kaggle MAP 0.09466
-    #hyb_cold.fit(**{"topK_P": 498, "alpha_P": 0.39235154382987336, "normalize_similarity_P": False, "topK": 650,
-    #               "shrink": 2, "similarity": "tanimoto", "normalize": True, "alpha": 0.614607984325037,
-    #                "feature_weighting": "TF-IDF"})
-    hyb_cold.fit(**{"topK_P": 1000, "alpha_P": 0.3866334498207009, "normalize_similarity_P": False, "topK": 1000,
-                    "shrink": 0, "similarity": "tanimoto", "normalize": False, "alpha": 0.5373872324033048,
-                    "feature_weighting": "BM25"})
-
-
-
-    #hyb2 = ItemKNNSimilarityHybridRecommender.ItemKNNSimilarityHybridRecommender(URM_train, itemKNNCBF.W_sparse,
-    #                                                                             p3alpha.W_sparse)
-    #hyb2.fit(topK=1000)
-    hyb2 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, p3alpha, itemKNNCBF)
-    hyb2.fit(alpha=0.5)
-
-    # Kaggle MAP 0.08667
-    hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, p3alpha, p3alpha)
-    hyb3.fit(alpha=0.5)
-
-    #hyb5 = ScoresHybrid3Recommender.ScoresHybrid3Recommender(URM_train, itemKNNCF, userKNNCF, itemKNNCBF)
-    #hyb5.fit(beta=0.3)
 
     # Kaggle MAP 0.09159 hyb6x(v2) + hyb5 (tried alpha 0.4 and 0.6, just small changes, test only as last resort)
     hyb6 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_cold, hyb5)
@@ -291,13 +287,22 @@ if __name__ == '__main__':
                  "shrink": 0, "similarity": "tversky", "normalize": False, "alpha": 0.8708660354719004,
                  "feature_weighting": "TF-IDF"})'''
 
-    hyb7 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb6x, hyb5)
-    hyb7.fit(alpha=0.5)
+    #hyb7 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb6x, hyb5)
+    #hyb7.fit(alpha=0.5)
     hyb7x = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_warm, hyb5)
     hyb7x.fit(alpha=0.5)
     # Kaggle MAP 0.09466
     hyb = ScoresHybridSpecializedFusion.ScoresHybridSpecializedFusion(URM_ICM_train, hyb6, hyb7x)
 
+    hyb2 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_midV2, hyb_midV2)
+    hyb2.fit(alpha=0.5)
+    hyb2x = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_coldV2, hyb5)
+    hyb2x.fit(alpha=0.5)
+    hyb2y = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_warmV2, hyb5)
+    hyb2y.fit(alpha=0.5)
+    #hyb3 = ScoresHybridSpecializedV2Fusion.ScoresHybridSpecializedV2Fusion(URM_ICM_train, hyb2x, hyb2, hyb2y)
+    hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_coldV2, hyb_coldV2)
+    hyb3.fit(alpha=0.5)
 
 
     MAP_p3alpha_per_group = []
@@ -312,9 +317,9 @@ if __name__ == '__main__':
     MAP_hyb7_per_group = []
     cutoff = 10
     args = {"block_size": block_size, "profile_length": profile_length, "sorted_users": sorted_users, "cutoff": cutoff,
-            "URM_test": URM_test, "hyb": hyb, "hyb2": hyb2, "hyb3": hyb3, "hyb5": hyb5, "hyb6": hyb6, "hyb7": hyb7}
+            "URM_test": URM_test, "hyb": hyb, "hyb2": hyb2, "hyb3": hyb3, "hyb5": hyb5, "hyb6": hyb6}
 
-    pool = PoolWithSubprocess(processes=groups, maxtasksperchild=1)
+    pool = PoolWithSubprocess(processes=multiprocessing.cpu_count()-1, maxtasksperchild=1)
     compute_group_MAP_partial = partial(compute_group_MAP, args)
     resultList = pool.map(compute_group_MAP_partial, range(0, groups))
     pool.close()
@@ -325,7 +330,7 @@ if __name__ == '__main__':
         MAP_hyb3_per_group.append(el[2])
         MAP_hyb5_per_group.append(el[3])
         MAP_hyb6_per_group.append(el[4])
-        MAP_hyb7_per_group.append(el[5])
+        #MAP_hyb7_per_group.append(el[5])
 
 
     import matplotlib.pyplot as pyplot
@@ -339,7 +344,7 @@ if __name__ == '__main__':
     pyplot.plot(MAP_hyb3_per_group, label="hyb3")
     pyplot.plot(MAP_hyb5_per_group, label="hyb5")
     pyplot.plot(MAP_hyb6_per_group, label="hyb6")
-    pyplot.plot(MAP_hyb7_per_group, label="hyb7")
+    #pyplot.plot(MAP_hyb7_per_group, label="hyb7")
     pyplot.ylabel('MAP')
     pyplot.xlabel('User Group')
     pyplot.legend()
@@ -347,16 +352,16 @@ if __name__ == '__main__':
 
     print(l_list)
     evaluator_validation = EvaluatorHoldout(URM_test, cutoff_list=[10], exclude_seen=True)
-    pool = PoolWithSubprocess(processes=6, maxtasksperchild=1)
-    hyb_list = [hyb, hyb2, hyb3, hyb5, hyb6, hyb7]
+    pool = PoolWithSubprocess(processes=multiprocessing.cpu_count()-1, maxtasksperchild=1)
+    hyb_list = [hyb, hyb2, hyb3, hyb5, hyb6]
     resultList = pool.map(evaluator_validation.evaluateRecommender, hyb_list)
     pool.close()
     pool.join()
     for el in resultList:
         print(el)
-    '''item_list = hyb.recommend(target_ids, cutoff=10)
-    CreateCSV.create_csv(target_ids, item_list, 'Hyb_URM_ICM_cold_warm')
-    item_list = hyb2.recommend(target_ids, cutoff=10)
+    item_list = hyb3.recommend(target_ids, cutoff=10)
+    CreateCSV.create_csv(target_ids, item_list, 'Hyb_URM_ICM_cold_warm_V2')
+    '''item_list = hyb2.recommend(target_ids, cutoff=10)
     CreateCSV.create_csv(target_ids, item_list, 'Hyb2')
     item_list = hyb6.recommend(target_ids, cutoff=10)
     CreateCSV.create_csv(target_ids, item_list, 'Hyb_URM_ICM')'''

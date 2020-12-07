@@ -21,6 +21,9 @@ from ScoresHybridRP3betaKNNCBF import ScoresHybridRP3betaKNNCBF
 from ScoresHybridP3alphaPureSVD import ScoresHybridP3alphaPureSVD
 from ScoresHybridSpecialized import ScoresHybridSpecialized
 from ScoresHybridSpecializedCold import ScoresHybridSpecializedCold
+from ScoresHybridSpecializedV2Cold import ScoresHybridSpecializedV2Cold
+from ScoresHybridSpecializedV2Mid import ScoresHybridSpecializedV2Mid
+from ScoresHybridSpecializedV2Warm import ScoresHybridSpecializedV2Warm
 
 
 ######################################################################
@@ -62,14 +65,15 @@ def runParameterSearch_Hybrid(recommender_class, URM_train, ICM_train, URM_train
        ##########################################################################################################
 
         if recommender_class in [ScoresHybridP3alphaKNNCBF, ScoresHybridRP3betaKNNCBF, ScoresHybridSpecialized,
-                                 ScoresHybridSpecializedCold]:
+                                 ScoresHybridSpecializedCold, ScoresHybridSpecializedV2Cold,
+                                 ScoresHybridSpecializedV2Mid, ScoresHybridSpecializedV2Warm]:
 
             hyperparameters_range_dictionary = {}
-            hyperparameters_range_dictionary["topK_P"] = Integer(5, 1000)
+            hyperparameters_range_dictionary["topK_P"] = Integer(5, 1500)
             hyperparameters_range_dictionary["alpha_P"] = Real(low = 0, high = 2, prior = 'uniform')
             hyperparameters_range_dictionary["normalize_similarity_P"] = Categorical([False])
-            hyperparameters_range_dictionary["topK"] = Integer(5, 1000)
-            hyperparameters_range_dictionary["shrink"] = Integer(0, 1000)
+            hyperparameters_range_dictionary["topK"] = Integer(5, 1500)
+            hyperparameters_range_dictionary["shrink"] = Integer(0, 1500)
             hyperparameters_range_dictionary["similarity"] = Categorical(["tversky", "tanimoto", 'cosine', 'asymmetric'])
             hyperparameters_range_dictionary["normalize"] = Categorical([True, False])
             hyperparameters_range_dictionary["alpha"] = Real(low = 0, high = 1, prior = 'uniform')
@@ -173,7 +177,7 @@ def read_data_split_and_search():
     URM_ICM_train = URM_ICM_train.tocsr()
 
 
-    output_folder_path = "ParamResultsExperiments/SKOPT_Hyb_P3alpha_KNNCBF_URM_ICM_specialized_"
+    output_folder_path = "ParamResultsExperiments/SKOPT_Hyb_P3alpha_KNNCBF_URM_ICM_specialized_V2_3-6"
     output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S/')
 
 
@@ -186,8 +190,11 @@ def read_data_split_and_search():
         #ScoresHybridP3alphaKNNCBF,
         #ScoresHybridRP3betaKNNCBF,
         #ScoresHybridP3alphaPureSVD,
-        ScoresHybridSpecialized,
-        ScoresHybridSpecializedCold
+        #ScoresHybridSpecialized,
+        #ScoresHybridSpecializedCold,
+        ScoresHybridSpecializedV2Cold,
+        ScoresHybridSpecializedV2Mid,
+        #ScoresHybridSpecializedV2Warm
     ]
 
     from Base.Evaluation.Evaluator import EvaluatorHoldout
@@ -200,8 +207,8 @@ def read_data_split_and_search():
                                                        URM_train = URM_ICM_train,
                                                        ICM_train = URM_ICM_train.T,
                                                        metric_to_optimize = "MAP",
-                                                       n_cases = 150,
-                                                       n_random_starts=50,
+                                                       n_cases = 70,
+                                                       n_random_starts=20,
                                                        evaluator_validation_earlystopping = evaluator_validation,
                                                        evaluator_validation = evaluator_validation,
                                                        evaluator_test = evaluator_test,
