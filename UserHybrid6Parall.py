@@ -318,9 +318,10 @@ if __name__ == '__main__':
     hyb2y = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_warmV2, hyb5)
     hyb2y.fit(alpha=0.5)
     #hyb3 = ScoresHybridSpecializedV2Fusion.ScoresHybridSpecializedV2Fusion(URM_ICM_train, hyb2x, hyb2z, hyb2y)
-    hyb3 = ScoresHybridSpecializedFusion.ScoresHybridSpecializedFusion(URM_ICM_train, hyb, hyb2y, 12)
-    #hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_warmV2, hyb5)
-    #hyb3.fit(alpha=0.5)
+    #hyb3 = ScoresHybridSpecializedFusion.ScoresHybridSpecializedFusion(URM_ICM_train, hyb6, hyb7x, 5.5)
+    # Kaggle MAP 0.9483
+    hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb_warmV2, hyb5)
+    hyb3.fit(alpha=0.5)
 
 
     MAP_p3alpha_per_group = []
