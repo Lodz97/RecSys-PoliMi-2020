@@ -52,6 +52,8 @@ if __name__ == '__main__':
 
     URM_ICM_train = sps.vstack([URM_train, ICM_all.T])
     URM_ICM_train = URM_ICM_train.tocsr()
+    URM_ICM_train2 = sps.hstack([URM_train, ICM_all.T])
+    URM_ICM_train2 = URM_ICM_train.tocsr()
 
     earlystopping_keywargs = {"validation_every_n": 10,
                               "stop_on_validation": True,
@@ -66,6 +68,12 @@ if __name__ == '__main__':
 
     itemKNNCF = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_train)
     itemKNNCF.fit(**{"topK": 1000, "shrink": 732, "similarity": "cosine", "normalize": True,
+                     "feature_weighting": "TF-IDF"})
+    itemKNNCF2 = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_train)
+    itemKNNCF2.fit(**{"topK": 1000, "shrink": 732, "similarity": "cosine", "normalize": True,
+                     "feature_weighting": "TF-IDF"})
+    itemKNNCF3 = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_train)
+    itemKNNCF3.fit(**{"topK": 1000, "shrink": 732, "similarity": "cosine", "normalize": True,
                      "feature_weighting": "TF-IDF"})
     #cfw = CFW_D_Similarity_Linalg.CFW_D_Similarity_Linalg(URM_train, ICM_train, itemKNNCF.W_sparse)
     #cfw.fit(show_max_performance=False, logFile=None, loss_tolerance=1e-6,

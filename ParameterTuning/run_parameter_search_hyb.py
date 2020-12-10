@@ -180,7 +180,7 @@ def read_data_split_and_search():
     URM_ICM_train = URM_ICM_train.tocsr()
 
 
-    output_folder_path = "ParamResultsExperiments/SKOPT_Hyb_P3alpha_KNNCBF_URM_ICM_specialized_V2_12"
+    output_folder_path = "ParamResultsExperiments/SKOPT_Hyb_P3alpha_KNNCBF_URM_specialized_V2_12"
     output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S/')
 
 
@@ -209,7 +209,7 @@ def read_data_split_and_search():
 
 
     runParameterSearch_Hybrid_partial = partial(runParameterSearch_Hybrid,
-                                                       URM_train = URM_ICM_train,
+                                                       URM_train = URM_train,
                                                        ICM_train = URM_ICM_train.T,
                                                        metric_to_optimize = "MAP",
                                                        n_cases = 100,
