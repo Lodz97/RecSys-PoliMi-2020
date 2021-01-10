@@ -596,6 +596,7 @@ from Data_manager.split_functions.split_train_validation_random_holdout import s
 def read_data_split_and_search():
     from Data_manager.RecSys2020 import RecSys2020Reader
     from datetime import datetime
+    from scipy import sparse as sps
 
     """
     This function provides a simple example on how to tune parameters of a given algorithm
@@ -617,13 +618,16 @@ def read_data_split_and_search():
 
     URM_all, user_id_unique, item_id_unique = RecSys2020Reader.load_urm()
     ICM_all = RecSys2020Reader.load_icm_asset()
-    URM_train, URM_test = split_train_in_two_percentage_global_sample(URM_all, train_percentage=0.90)
-    URM_train, URM_validation = split_train_in_two_percentage_global_sample(URM_train, train_percentage = 0.85)
-    ICM_train, ICM_test = split_train_in_two_percentage_global_sample(ICM_all, train_percentage=0.90)
-    ICM_train, ICM_validation = split_train_in_two_percentage_global_sample(ICM_train, train_percentage=0.85)
+    URM_train, URM_test = split_train_in_two_percentage_global_sample(URM_all, train_percentage=0.95)
+    URM_train, URM_validation = split_train_in_two_percentage_global_sample(URM_train, train_percentage = 0.90)
+    ICM_train, ICM_test = split_train_in_two_percentage_global_sample(ICM_all, train_percentage=0.95)
+    ICM_train, ICM_validation = split_train_in_two_percentage_global_sample(ICM_train, train_percentage=0.90)
+
+    URM_ICM_train = sps.vstack([URM_train, ICM_all.T])
+    URM_ICM_train = URM_ICM_train.tocsr()
 
 
-    output_folder_path = "ParamResultsExperiments/SKOPT_CBF_"
+    output_folder_path = "ParamResultsExperiments/SKOPT_KNNCF_KNNCBF_URM_ICM"
     output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S/')
 
 
@@ -637,18 +641,19 @@ def read_data_split_and_search():
         # TopPop,
         #P3alphaRecommender,
         #RP3betaRecommender,
-        #ItemKNNCFRecommender,
+        ItemKNNCFRecommender,
+        UserKNNCFRecommender,
         #UserKNNCFRecommender,
         #MatrixFactorization_BPR_Cython,
         #MatrixFactorization_FunkSVD_Cython,
-        PureSVDRecommender,
+        #PureSVDRecommender,
         # SLIM_BPR_Cython,
         #MultiThreadSLIM_ElasticNet
         #EASE_R_Recommender
     ]
 
     content_algorithm_list = [
-        #ItemKNNCBFRecommender
+        ItemKNNCBFRecommender
     ]
 
 
@@ -660,9 +665,9 @@ def read_data_split_and_search():
 
 
     runParameterSearch_Collaborative_partial = partial(runParameterSearch_Collaborative,
-                                                       URM_train = URM_train,
+                                                       URM_train = URM_ICM_train,
                                                        metric_to_optimize = "MAP",
-                                                       n_cases = 100,
+                                                       n_cases = 75,
                                                        n_random_starts=30,
                                                        evaluator_validation_earlystopping = evaluator_validation,
                                                        evaluator_validation = evaluator_validation,
@@ -670,12 +675,12 @@ def read_data_split_and_search():
                                                        output_folder_path = output_folder_path)
 
     runParameterSearch_Content_partial = partial(runParameterSearch_Content,
-                                                 URM_train=URM_train,
-                                                 ICM_object=ICM_train,
+                                                 URM_train=URM_ICM_train,
+                                                 ICM_object=URM_ICM_train.T,
                                                  ICM_name='titles',
                                                  metric_to_optimize="MAP",
-                                                 n_cases=50,
-                                                 n_random_starts=16,
+                                                 n_cases=75,
+                                                 n_random_starts=30,
                                                  evaluator_validation=evaluator_validation,
                                                  evaluator_test=evaluator_test,
                                                  output_folder_path=output_folder_path)

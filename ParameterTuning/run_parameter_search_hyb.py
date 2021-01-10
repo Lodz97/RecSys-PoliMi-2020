@@ -15,6 +15,7 @@ Created on 22/11/17
 ######################################################################
 
 
+from KNN.ItemKNNCFRecommender import ItemKNNCFRecommender
 #Hybrid
 from ScoresHybridP3alphaKNNCBF import ScoresHybridP3alphaKNNCBF
 from ScoresHybridRP3betaKNNCBF import ScoresHybridRP3betaKNNCBF
@@ -26,6 +27,12 @@ from ScoresHybridSpecializedV2Mid import ScoresHybridSpecializedV2Mid
 from ScoresHybridSpecializedV2Warm import ScoresHybridSpecializedV2Warm
 from ScoresHybridSpecializedV2Mid12 import ScoresHybridSpecializedV2Mid12
 from ScoresHybridSpecializedV2Warm12 import ScoresHybridSpecializedV2Warm12
+from ScoresHybridSpecializedV3Cold import ScoresHybridSpecializedV3Cold
+from ScoresHybridSpecializedV3Warm import ScoresHybridSpecializedV3Warm
+from ScoresHybridSpecializedAdaptive import ScoresHybridSpecializedAdaptive
+from ScoresHybridKNNCFKNNCBF import ScoresHybridKNNCFKNNCBF
+from ScoresHybridUserKNNCFKNNCBF import ScoresHybridUserKNNCFKNNCBF
+from FeatureWeighting.CFW_D_Similarity_Linalg import CFW_D_Similarity_Linalg
 
 
 ######################################################################
@@ -39,7 +46,7 @@ from ParameterTuning.SearchSingleCase import SearchSingleCase
 from ParameterTuning.SearchAbstractClass import SearchInputRecommenderArgs
 
 
-def runParameterSearch_Hybrid(recommender_class, URM_train, ICM_train, URM_train_last_test = None, metric_to_optimize = "MAP",
+def runParameterSearch_Hybrid(recommender_class, URM_train, ICM_train, W_sparse_CF = None, URM_train_last_test = None, metric_to_optimize = "MAP",
                                      evaluator_validation = None, evaluator_test = None, evaluator_validation_earlystopping = None,
                                      output_folder_path ="result_experiments/",
                                      n_cases = 35, n_random_starts = 5, resume_from_saved = False, save_model = "best",
@@ -53,6 +60,7 @@ def runParameterSearch_Hybrid(recommender_class, URM_train, ICM_train, URM_train
 
     URM_train = URM_train.copy()
     ICM_train = ICM_train.copy()
+    # W_sparse_CF = W_sparse_CF.copy()
 
     if URM_train_last_test is not None:
         URM_train_last_test = URM_train_last_test.copy()
@@ -69,7 +77,8 @@ def runParameterSearch_Hybrid(recommender_class, URM_train, ICM_train, URM_train
         if recommender_class in [ScoresHybridP3alphaKNNCBF, ScoresHybridRP3betaKNNCBF, ScoresHybridSpecialized,
                                  ScoresHybridSpecializedCold, ScoresHybridSpecializedV2Cold,
                                  ScoresHybridSpecializedV2Mid, ScoresHybridSpecializedV2Warm,
-                                 ScoresHybridSpecializedV2Mid12, ScoresHybridSpecializedV2Warm12]:
+                                 ScoresHybridSpecializedV2Mid12, ScoresHybridSpecializedV2Warm12,
+                                 ScoresHybridSpecializedV3Cold, ScoresHybridSpecializedV3Warm]:
 
             hyperparameters_range_dictionary = {}
             hyperparameters_range_dictionary["topK_P"] = Integer(5, 1500)
@@ -95,6 +104,74 @@ def runParameterSearch_Hybrid(recommender_class, URM_train, ICM_train, URM_train
 
         ##########################################################################################################
 
+        if recommender_class in [ScoresHybridKNNCFKNNCBF, ScoresHybridUserKNNCFKNNCBF]:
+
+            hyperparameters_range_dictionary = {}
+            hyperparameters_range_dictionary["topK_CF"] = Integer(5, 1500)
+            hyperparameters_range_dictionary["shrink_CF"] = Integer(0, 1500)
+            hyperparameters_range_dictionary["similarity_CF"] = Categorical(
+                ["tversky", "tanimoto", 'cosine', 'asymmetric'])
+            hyperparameters_range_dictionary["normalize_CF"] = Categorical([True, False])
+            hyperparameters_range_dictionary["topK"] = Integer(5, 1500)
+            hyperparameters_range_dictionary["shrink"] = Integer(0, 1500)
+            hyperparameters_range_dictionary["similarity"] = Categorical(
+                ["tversky", "tanimoto", 'cosine', 'asymmetric'])
+            hyperparameters_range_dictionary["normalize"] = Categorical([True, False])
+            hyperparameters_range_dictionary["alpha"] = Real(low=0, high=1, prior='uniform')
+
+            if allow_weighting:
+                hyperparameters_range_dictionary["feature_weighting"] = Categorical(["none", "BM25", "TF-IDF"])
+
+            recommender_input_args = SearchInputRecommenderArgs(
+                CONSTRUCTOR_POSITIONAL_ARGS=[URM_train, ICM_train],
+                CONSTRUCTOR_KEYWORD_ARGS={},
+                FIT_POSITIONAL_ARGS=[],
+                FIT_KEYWORD_ARGS={}
+            )
+        ##########################################################################################################
+
+        if recommender_class is ScoresHybridSpecializedAdaptive:
+
+            hyperparameters_range_dictionary = {}
+            # Cold users hybrid
+            hyperparameters_range_dictionary["topK_P_C"] = Integer(5, 1500)
+            hyperparameters_range_dictionary["alpha_P_C"] = Real(low=0, high=2, prior='uniform')
+            hyperparameters_range_dictionary["beta_P_C"] = Real(low=0, high=2, prior='uniform')
+            hyperparameters_range_dictionary["normalize_similarity_P_C"] = Categorical([False])
+            hyperparameters_range_dictionary["topK_C"] = Integer(5, 1500)
+            hyperparameters_range_dictionary["shrink_C"] = Integer(0, 1500)
+            hyperparameters_range_dictionary["similarity_C"] = Categorical(
+                ["tversky", "tanimoto", 'cosine', 'asymmetric'])
+            hyperparameters_range_dictionary["normalize_C"] = Categorical([True, False])
+            # hyperparameters_range_dictionary["alpha_C"] = Real(low=0, high=1, prior='uniform')
+            if allow_weighting:
+                hyperparameters_range_dictionary["feature_weighting_C"] = Categorical(["none", "BM25", "TF-IDF"])
+
+            # Warm users hybrid
+            hyperparameters_range_dictionary["topK_P"] = Integer(5, 1500)
+            hyperparameters_range_dictionary["alpha_P"] = Real(low=0, high=2, prior='uniform')
+            hyperparameters_range_dictionary["beta_P"] = Real(low=0, high=2, prior='uniform')
+            hyperparameters_range_dictionary["normalize_similarity_P"] = Categorical([False])
+            hyperparameters_range_dictionary["topK"] = Integer(5, 1500)
+            hyperparameters_range_dictionary["shrink"] = Integer(0, 1500)
+            hyperparameters_range_dictionary["similarity"] = Categorical(
+                ["tversky", "tanimoto", 'cosine', 'asymmetric'])
+            hyperparameters_range_dictionary["normalize"] = Categorical([True, False])
+            # hyperparameters_range_dictionary["alpha"] = Real(low=0, high=1, prior='uniform')
+            if allow_weighting:
+                hyperparameters_range_dictionary["feature_weighting"] = Categorical(["none", "BM25", "TF-IDF"])
+
+            hyperparameters_range_dictionary["threshold"] = Integer(1, 30)
+
+            recommender_input_args = SearchInputRecommenderArgs(
+                CONSTRUCTOR_POSITIONAL_ARGS=[URM_train, ICM_train],
+                CONSTRUCTOR_KEYWORD_ARGS={},
+                FIT_POSITIONAL_ARGS=[],
+                FIT_KEYWORD_ARGS={}
+            )
+
+        ##########################################################################################################
+
         if recommender_class is ScoresHybridP3alphaPureSVD:
 
             hyperparameters_range_dictionary = {}
@@ -106,6 +183,21 @@ def runParameterSearch_Hybrid(recommender_class, URM_train, ICM_train, URM_train
 
             recommender_input_args = SearchInputRecommenderArgs(
                 CONSTRUCTOR_POSITIONAL_ARGS=[URM_train],
+                CONSTRUCTOR_KEYWORD_ARGS={},
+                FIT_POSITIONAL_ARGS=[],
+                FIT_KEYWORD_ARGS={}
+            )
+
+        ##########################################################################################################
+
+        if recommender_class is CFW_D_Similarity_Linalg:
+            hyperparameters_range_dictionary = {}
+            hyperparameters_range_dictionary["topK"] = Integer(5, 1000)
+            hyperparameters_range_dictionary["add_zeros_quota"] = Real(low=0, high=1, prior='uniform')
+            hyperparameters_range_dictionary["normalize_similarity"] = Categorical([True, False])
+
+            recommender_input_args = SearchInputRecommenderArgs(
+                CONSTRUCTOR_POSITIONAL_ARGS=[URM_train, ICM_train, W_sparse_CF],
                 CONSTRUCTOR_KEYWORD_ARGS={},
                 FIT_POSITIONAL_ARGS=[],
                 FIT_KEYWORD_ARGS={}
@@ -180,7 +272,7 @@ def read_data_split_and_search():
     URM_ICM_train = URM_ICM_train.tocsr()
 
 
-    output_folder_path = "ParamResultsExperiments/SKOPT_Hyb_P3alpha_KNNCBF_URM_specialized_V2_12"
+    output_folder_path = "ParamResultsExperiments/SKOPT_ScoresHybridP3alphaKNNCBF_warm_12_"
     output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S/')
 
 
@@ -196,21 +288,31 @@ def read_data_split_and_search():
         #ScoresHybridSpecialized,
         #ScoresHybridSpecializedCold,
         #ScoresHybridSpecializedV2Cold,
+        #ScoresHybridSpecializedV3Cold,
         #ScoresHybridSpecializedV2Mid,
-        #ScoresHybridSpecializedV2Warm
-        ScoresHybridSpecializedV2Mid12,
-        ScoresHybridSpecializedV2Warm12
+        #ScoresHybridSpecializedV2Warm,
+        #ScoresHybridSpecializedV3Warm,
+        #ScoresHybridSpecializedV2Mid12,
+        ScoresHybridSpecializedV2Warm12,
+        #ScoresHybridSpecializedAdaptive,
+        #ScoresHybridKNNCFKNNCBF,
+        #ScoresHybridUserKNNCFKNNCBF,
+        #CFW_D_Similarity_Linalg
     ]
 
     from Base.Evaluation.Evaluator import EvaluatorHoldout
 
-    evaluator_validation = EvaluatorHoldout(URM_validation, cutoff_list=[10])
+    evaluator_validation = EvaluatorHoldout(URM_validation, cutoff_list=[15])
     evaluator_test = EvaluatorHoldout(URM_test, cutoff_list=[5, 10])
 
+    #cf = ItemKNNCFRecommender(URM_ICM_train)
+    #cf.fit(**{"topK": 259, "shrink": 24, "similarity": "cosine", "normalize": True})
+    #W_sparse_CF = cf.W_sparse
 
     runParameterSearch_Hybrid_partial = partial(runParameterSearch_Hybrid,
-                                                       URM_train = URM_train,
+                                                       URM_train = URM_ICM_train,
                                                        ICM_train = URM_ICM_train.T,
+                                                       #W_sparse_CF = W_sparse_CF,
                                                        metric_to_optimize = "MAP",
                                                        n_cases = 100,
                                                        n_random_starts=30,

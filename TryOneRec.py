@@ -14,7 +14,7 @@ from KNN import ItemKNNCBFRecommender, ItemKNNCFRecommender, ItemKNNCustomSimila
 from EASE_R import EASE_R_Recommender
 from FeatureWeighting import CFW_D_Similarity_Linalg
 import ItemKNNScoresHybridRecommender
-import ScoresHybridP3alphaKNNCBF
+import ScoresHybridP3alphaKNNCBF, ScoresHybridSpecializedV2Mid
 import CreateCSV
 from scipy import sparse as sps
 
@@ -52,8 +52,8 @@ if __name__ == '__main__':
 
     URM_ICM_train = sps.vstack([URM_train, ICM_all.T])
     URM_ICM_train = URM_ICM_train.tocsr()
-    URM_ICM_train2 = sps.hstack([URM_train, ICM_all.T])
-    URM_ICM_train2 = URM_ICM_train.tocsr()
+    URM_ICM_train2 = sps.hstack([ICM_all, URM_train.T])
+    URM_ICM_train2 = URM_ICM_train2.tocsr()
 
     earlystopping_keywargs = {"validation_every_n": 10,
                               "stop_on_validation": True,
@@ -66,15 +66,22 @@ if __name__ == '__main__':
     #recommender = UserKNNCFRecommender.UserKNNCFRecommender(URM_train)
     #recommender.fit(**{"topK": 131, "shrink": 2, "similarity": "cosine", "normalize": True})
 
-    itemKNNCF = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_train)
+    '''itemKNNCF = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_train)
     itemKNNCF.fit(**{"topK": 1000, "shrink": 732, "similarity": "cosine", "normalize": True,
                      "feature_weighting": "TF-IDF"})
-    itemKNNCF2 = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_train)
+    itemKNNCF2 = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_ICM_train)
     itemKNNCF2.fit(**{"topK": 1000, "shrink": 732, "similarity": "cosine", "normalize": True,
                      "feature_weighting": "TF-IDF"})
-    itemKNNCF3 = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_train)
+    itemKNNCF3 = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_ICM_train2.T)
     itemKNNCF3.fit(**{"topK": 1000, "shrink": 732, "similarity": "cosine", "normalize": True,
-                     "feature_weighting": "TF-IDF"})
+                     "feature_weighting": "TF-IDF"})'''
+    itemKNNCBF = ItemKNNCBFRecommender.ItemKNNCBFRecommender(URM_train, URM_train.T)
+    itemKNNCBF.fit(topK=700, shrink=200, similarity='jaccard', normalize=True, feature_weighting="TF-IDF")
+    itemKNNCBF2 = ItemKNNCBFRecommender.ItemKNNCBFRecommender(URM_train, URM_ICM_train.T)
+    itemKNNCBF2.fit(topK=700, shrink=200, similarity='jaccard', normalize=True, feature_weighting="TF-IDF")
+    itemKNNCBF3 = ItemKNNCBFRecommender.ItemKNNCBFRecommender(URM_train, URM_ICM_train2)
+    itemKNNCBF3.fit(topK=700, shrink=200, similarity='jaccard', normalize=True, feature_weighting="TF-IDF")
+
     #cfw = CFW_D_Similarity_Linalg.CFW_D_Similarity_Linalg(URM_train, ICM_train, itemKNNCF.W_sparse)
     #cfw.fit(show_max_performance=False, logFile=None, loss_tolerance=1e-6,
     #        iteration_limit=500000, damp_coeff=0.5, topK=900, add_zeros_quota=0.5, normalize_similarity=True)
@@ -92,6 +99,20 @@ if __name__ == '__main__':
             "similarity": "tversky", "normalize": False, "alpha": 0.5207647439152092, "feature_weighting": "none"}
     hyb6.fit(**args)
 
+    #cf = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_ICM_train)
+    #cf.fit(**{"topK": 259, "shrink": 24, "similarity": "cosine", "normalize": True})
+    #W_sparse_CF = cf.W_sparse
+    #hyb7 = CFW_D_Similarity_Linalg.CFW_D_Similarity_Linalg(URM_train, ICM_all, W_sparse_CF)
+    #hyb7.fit(**{"topK": 575, "add_zeros_quota": 0.6070346405411541, "normalize_similarity": False})
+
+    hyb7 = ScoresHybridSpecializedV2Mid.ScoresHybridSpecializedV2Mid(URM_ICM_train, URM_ICM_train.T)
+    hyb7.fit(**{"topK_P": 516, "alpha_P": 0.4753488773601332, "normalize_similarity_P": False, "topK": 258, "shrink": 136,
+             "similarity": "asymmetric", "normalize": False, "alpha": 0.48907705969537585, "feature_weighting": "BM25"})
+
+    print(evaluator_validation.evaluateRecommender(itemKNNCBF))
+    print(evaluator_validation.evaluateRecommender(itemKNNCBF2))
+    print(evaluator_validation.evaluateRecommender(itemKNNCBF3))
+    print(evaluator_validation.evaluateRecommender(hyb7))
     print(evaluator_validation.evaluateRecommender(hyb5))
     print(evaluator_validation.evaluateRecommender(hyb6))
 

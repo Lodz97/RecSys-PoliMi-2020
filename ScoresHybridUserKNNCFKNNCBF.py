@@ -1,32 +1,33 @@
 from Base.BaseSimilarityMatrixRecommender import BaseItemSimilarityMatrixRecommender
 from Base.Recommender_utils import check_matrix
-from GraphBased import P3alphaRecommender
-from KNN import ItemKNNCBFRecommender
+from KNN import ItemKNNCBFRecommender, UserKNNCFRecommender
 from Base.DataIO import DataIO
 import numpy as np
 
 
-class ScoresHybridSpecializedV2Mid(BaseItemSimilarityMatrixRecommender):
+class ScoresHybridUserKNNCFKNNCBF(BaseItemSimilarityMatrixRecommender):
     """ ItemKNNScoresHybridRecommender
     Hybrid of two prediction scores R = R1*alpha + R2*(1-alpha)
     NB: Rec_1 is itemKNNCF, Rec_2 is userKNNCF
     """
 
-    RECOMMENDER_NAME = "ScoresHybridSpecializedV2Mid"
+    RECOMMENDER_NAME = "SHUserKNNCFKNNCBF"
 
     def __init__(self, URM_train, ICM_train):
-        super(ScoresHybridSpecializedV2Mid, self).__init__(URM_train)
+        super(ScoresHybridUserKNNCFKNNCBF, self).__init__(URM_train)
 
         self.URM_train = check_matrix(URM_train.copy(), 'csr')
         self.ICM_train = ICM_train
-        self.P3alpha = P3alphaRecommender.P3alphaRecommender(URM_train)
+        self.userKNNCF = UserKNNCFRecommender.UserKNNCFRecommender(URM_train)
         self.itemKNNCBF = ItemKNNCBFRecommender.ItemKNNCBFRecommender(URM_train, ICM_train)
 
-    def fit(self, topK_P=991, alpha_P=0.4705816992313091, normalize_similarity_P=False, alpha=0.5,
+    def fit(self, topK_CF=991, shrink_CF=0.4705816992313091, similarity_CF='jaccard', normalize_CF=True,
+            feature_weighting_CF="TF-IDF", alpha=0.5,
             topK=700, shrink=200, similarity='jaccard', normalize=True, feature_weighting="TF-IDF", norm_scores=True):
         self.alpha = alpha
         self.norm_scores = norm_scores
-        self.P3alpha.fit(topK=topK_P, alpha=alpha_P, normalize_similarity=normalize_similarity_P)
+        self.userKNNCF.fit(topK=topK_CF, shrink=shrink_CF, similarity=similarity_CF, normalize=normalize_CF,
+                            feature_weighting=feature_weighting_CF)
         self.itemKNNCBF.fit(topK=topK, shrink=shrink, similarity=similarity, normalize=normalize,
                             feature_weighting=feature_weighting)
 
@@ -39,7 +40,7 @@ class ScoresHybridSpecializedV2Mid(BaseItemSimilarityMatrixRecommender):
         :return:
         """
 
-        item_scores1 = self.P3alpha._compute_item_score(user_id_array, items_to_compute)
+        item_scores1 = self.userKNNCF._compute_item_score(user_id_array, items_to_compute)
         item_scores2 = self.itemKNNCBF._compute_item_score(user_id_array, items_to_compute)
 
         if self.norm_scores:
@@ -61,25 +62,6 @@ class ScoresHybridSpecializedV2Mid(BaseItemSimilarityMatrixRecommender):
 
         return item_scores
 
-    def recommend(self, user_id_array, cutoff=None, remove_seen_flag=True, items_to_compute=None,
-                  remove_top_pop_flag=False, remove_custom_items_flag=False, return_scores=False):
-
-        profile_length = np.ediff1d(self.URM_train.indptr)
-        res = super(ScoresHybridSpecializedV2Mid, self).recommend(user_id_array, cutoff=cutoff, remove_seen_flag=remove_seen_flag,
-              items_to_compute=items_to_compute, remove_top_pop_flag=remove_top_pop_flag,
-              remove_custom_items_flag=remove_custom_items_flag, return_scores=return_scores)
-
-        if return_scores:
-            for i in range(0, len(user_id_array)):
-                if profile_length[user_id_array[i]] < 3 or profile_length[user_id_array[i]] >= 16:
-                    res[0][i] = [1,2,3,4,5,6,7,8,9,10]
-        else:
-            for i in range(0, len(user_id_array)):
-                if profile_length[user_id_array[i]] < 3 or profile_length[user_id_array[i]] >= 16:
-                    res[i] = [1,2,3,4,5,6,7,8,9,10]
-
-        return res
-
 
     def save_model(self, folder_path, file_name = None):
 
@@ -89,7 +71,7 @@ class ScoresHybridSpecializedV2Mid(BaseItemSimilarityMatrixRecommender):
         self._print("Saving model in file '{}'".format(folder_path + file_name))
 
         data_dict_to_save = {"W_sparse_itemKNNCBF": self.itemKNNCBF.W_sparse, "norm_scores": self.norm_scores,
-                             "W_sparse_P3Alpha": self.P3alpha.W_sparse, "alpha": self.alpha}
+                             "W_sparse_userKNNCF": self.userKNNCF.W_sparse, "alpha": self.alpha}
 
         dataIO = DataIO(folder_path=folder_path)
         dataIO.save_data(file_name=file_name, data_dict_to_save = data_dict_to_save)
@@ -108,8 +90,8 @@ class ScoresHybridSpecializedV2Mid(BaseItemSimilarityMatrixRecommender):
         data_dict = dataIO.load_data(file_name=file_name)
 
         for attrib_name in data_dict.keys():
-            if attrib_name == "W_sparse_P3Alpha":
-                self.P3alpha.W_sparse = data_dict[attrib_name]
+            if attrib_name == "W_sparse_userKNNCF":
+                self.userKNNCF.W_sparse = data_dict[attrib_name]
             elif attrib_name == "W_sparse_itemKNNCBF":
                 self.itemKNNCBF.W_sparse = data_dict[attrib_name]
             elif attrib_name == "alpha":

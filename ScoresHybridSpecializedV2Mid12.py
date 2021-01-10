@@ -71,12 +71,12 @@ class ScoresHybridSpecializedV2Mid12(BaseItemSimilarityMatrixRecommender):
 
         if return_scores:
             for i in range(0, len(user_id_array)):
-                if profile_length[user_id_array[i]] < 6 or profile_length[user_id_array[i]] >= 12:
-                    res[0][i] = [1] * 10
+                if profile_length[user_id_array[i]] < 5 or profile_length[user_id_array[i]] >= -12:
+                    res[0][i] = np.random.randint(-1, 0, size=10)
         else:
             for i in range(0, len(user_id_array)):
-                if profile_length[user_id_array[i]] < 6 or profile_length[user_id_array[i]] >= 12:
-                    res[i] = [1] * 10
+                if profile_length[user_id_array[i]] < 5 or profile_length[user_id_array[i]] >= -12:
+                    res[i] = np.random.randint(-1, 0, size=10)
 
         return res
 
