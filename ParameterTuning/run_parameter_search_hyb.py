@@ -81,14 +81,14 @@ def runParameterSearch_Hybrid(recommender_class, URM_train, ICM_train, W_sparse_
                                  ScoresHybridSpecializedV3Cold, ScoresHybridSpecializedV3Warm]:
 
             hyperparameters_range_dictionary = {}
-            hyperparameters_range_dictionary["topK_P"] = Integer(5, 1500)
+            hyperparameters_range_dictionary["topK_P"] = Integer(5, 3000)
             hyperparameters_range_dictionary["alpha_P"] = Real(low = 0, high = 2, prior = 'uniform')
             hyperparameters_range_dictionary["normalize_similarity_P"] = Categorical([False])
-            hyperparameters_range_dictionary["topK"] = Integer(5, 1500)
-            hyperparameters_range_dictionary["shrink"] = Integer(0, 1500)
+            hyperparameters_range_dictionary["topK"] = Integer(5, 3000)
+            hyperparameters_range_dictionary["shrink"] = Integer(0, 5000)
             hyperparameters_range_dictionary["similarity"] = Categorical(["tversky", "tanimoto", 'cosine', 'asymmetric'])
             hyperparameters_range_dictionary["normalize"] = Categorical([True, False])
-            hyperparameters_range_dictionary["alpha"] = Real(low = 0, high = 1, prior = 'uniform')
+            hyperparameters_range_dictionary["alpha"] = Real(low = 0, high = 2, prior = 'uniform')
             if recommender_class is ScoresHybridRP3betaKNNCBF:
                 hyperparameters_range_dictionary["beta_P"] = Real(low = 0, high = 2, prior = 'uniform')
 
@@ -272,7 +272,7 @@ def read_data_split_and_search():
     URM_ICM_train = URM_ICM_train.tocsr()
 
 
-    output_folder_path = "ParamResultsExperiments/SKOPT_ScoresHybridP3alphaKNNCBF_warm_12_"
+    output_folder_path = "ParamResultsExperiments/SKOPT_ScoresHybridP3alphaKNNCBF_specialized_extend_param"
     output_folder_path += datetime.now().strftime('%b%d_%H-%M-%S/')
 
 
@@ -283,7 +283,7 @@ def read_data_split_and_search():
 
     hybrid_algorithm_list = [
         #ScoresHybridP3alphaKNNCBF,
-        #ScoresHybridRP3betaKNNCBF,
+        ScoresHybridRP3betaKNNCBF,
         #ScoresHybridP3alphaPureSVD,
         #ScoresHybridSpecialized,
         #ScoresHybridSpecializedCold,
@@ -293,7 +293,7 @@ def read_data_split_and_search():
         #ScoresHybridSpecializedV2Warm,
         #ScoresHybridSpecializedV3Warm,
         #ScoresHybridSpecializedV2Mid12,
-        ScoresHybridSpecializedV2Warm12,
+        #ScoresHybridSpecializedV2Warm12,
         #ScoresHybridSpecializedAdaptive,
         #ScoresHybridKNNCFKNNCBF,
         #ScoresHybridUserKNNCFKNNCBF,
@@ -302,7 +302,7 @@ def read_data_split_and_search():
 
     from Base.Evaluation.Evaluator import EvaluatorHoldout
 
-    evaluator_validation = EvaluatorHoldout(URM_validation, cutoff_list=[15])
+    evaluator_validation = EvaluatorHoldout(URM_validation, cutoff_list=[10])
     evaluator_test = EvaluatorHoldout(URM_test, cutoff_list=[5, 10])
 
     #cf = ItemKNNCFRecommender(URM_ICM_train)
@@ -315,7 +315,7 @@ def read_data_split_and_search():
                                                        #W_sparse_CF = W_sparse_CF,
                                                        metric_to_optimize = "MAP",
                                                        n_cases = 100,
-                                                       n_random_starts=30,
+                                                       n_random_starts=20,
                                                        evaluator_validation_earlystopping = evaluator_validation,
                                                        evaluator_validation = evaluator_validation,
                                                        evaluator_test = evaluator_test,
@@ -327,7 +327,7 @@ def read_data_split_and_search():
     from Utils.PoolWithSubprocess import PoolWithSubprocess
 
 
-    pool = PoolWithSubprocess(processes=int(multiprocessing.cpu_count()), maxtasksperchild=1)
+    pool = PoolWithSubprocess(processes=int(multiprocessing.cpu_count()-1), maxtasksperchild=1)
     resultList = pool.map_async(runParameterSearch_Hybrid_partial, hybrid_algorithm_list)
     pool.close()
     pool.join()
