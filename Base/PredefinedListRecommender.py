@@ -8,7 +8,7 @@
 import numpy as np
 from Base.BaseRecommender import BaseRecommender
 from Base.Recommender_utils import check_matrix
-import implicit
+#import implicit
 
 import scipy.sparse as sps
 
