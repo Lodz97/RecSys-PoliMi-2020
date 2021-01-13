@@ -7,7 +7,6 @@ from GraphBased import P3alphaRecommender, RP3betaRecommender
 from SLIM_ElasticNet import SLIMElasticNetRecommender
 from Base.Evaluation.Evaluator import EvaluatorHoldout
 from MatrixFactorization.Cython import MatrixFactorization_Cython
-from MatrixFactorization.PyTorch import MF_MSE_PyTorch
 from MatrixFactorization import IALSRecommender, NMFRecommender, PureSVDRecommender
 from KNN import ItemKNNCBFRecommender, ItemKNNCFRecommender, ItemKNNCustomSimilarityRecommender,\
                 ItemKNNSimilarityHybridRecommender, UserKNNCFRecommender
@@ -35,7 +34,6 @@ from scipy import sparse as sps
 from Utils.PoolWithSubprocess import PoolWithSubprocess
 import multiprocessing
 from functools import partial
-import TryHyb5Parall
 import time
 
 
@@ -301,9 +299,10 @@ if __name__ == '__main__':
                               }
 
     ials = IALSRecommender.IALSRecommender(URM_ICM_train)
-    ials.fit(epochs=7, num_factors=1500, alpha=25)
-    ials.save_model('SavedModels\\', 'IALS_epochs=7_num_factors=1500_alpha=25')
-    # KAGGLE MAP 0.09674
+    ials.fit(epochs=8, num_factors=600, alpha=25)
+    # KAGGLE MAP 0.09674 num_factors=600, alpha=50
+    # KAGGLE MAP 0.09726 num_factors=600, alpha=35
+    # KAGGLE MAP 0.09785 num_factors=600, alpha=35
     hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb7, ials)
     hyb3.fit(alpha=0.5)
 

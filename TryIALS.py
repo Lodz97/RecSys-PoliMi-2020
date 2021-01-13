@@ -8,7 +8,6 @@ from SLIM_ElasticNet import SLIMElasticNetRecommender
 from Base.Evaluation.Evaluator import EvaluatorHoldout
 from Base import PredefinedListRecommender
 from MatrixFactorization.Cython import MatrixFactorization_Cython
-from MatrixFactorization.PyTorch import MF_MSE_PyTorch
 from MatrixFactorization import IALSRecommender, NMFRecommender, PureSVDRecommender
 from KNN import ItemKNNCBFRecommender, ItemKNNCFRecommender, ItemKNNCustomSimilarityRecommender,\
                 ItemKNNSimilarityHybridRecommender, UserKNNCFRecommender
@@ -18,7 +17,7 @@ import ItemKNNScoresHybridRecommender
 import ScoresHybridP3alphaKNNCBF, ScoresHybridSpecializedV2Mid
 import CreateCSV
 from scipy import sparse as sps
-import implicit
+#import implicit
 
 # https://github.com/MaurizioFD/RecSys_Course_AT_PoliMi/blob/master/Practice%2009%20-%20SLIM%20BPR.ipynb
 # https://github.com/nicolo-felicioni/recsys-polimi-2019/tree/master/Hybrid
@@ -47,7 +46,7 @@ if __name__ == '__main__':
     pyplot.xlabel('Sorted User')
     pyplot.show()'''
 
-    #np.random.seed(1234)
+    np.random.seed(1234991)
     URM_train, URM_test = train_test_holdout(URM_all, train_perc=0.90)
     ICM_train, ICM_test = train_test_holdout(ICM_all, train_perc=0.9)
     evaluator_validation = EvaluatorHoldout(URM_test, cutoff_list=[10], exclude_seen=True)
@@ -64,19 +63,28 @@ if __name__ == '__main__':
                               "validation_metric": "MAP",
                               }
 
+    '''model = implicit.als.AlternatingLeastSquares(factors=50)
+
+    # train the model on a sparse matrix of item/user/confidence weights
+    model.fit(URM_train.T)
+
+    # recommend items for a user
+    rec_list = []
+    for el in target_ids:
+        recommendations = model.recommend(el, URM_train, N=100)
+        rec_list.append([x[1] for x in recommendations])
+    print(rec_list)
+
+    #rows, cols, vals = zip(*rec_list)
+
+    csr_rec = sps.csr_matrix(rec_list)
+    pred = PredefinedListRecommender.PredefinedListRecommender(URM_train)
+    pred.fit()'''
+
+    ials = IALSRecommender.IALSRecommender(URM_ICM_train)
     alpha = 50
     print(alpha)
-
-    '''data_conf = (URM_ICM_train * alpha).astype('double')
-
-    print(implicit.cuda.HAS_CUDA)
-    pred = PredefinedListRecommender.PredefinedListRecommender(data_conf)
-    pred.fit(factors=100, epochs=8)'''
-
-    #ials1 = IALSRecommender.IALSRecommender(URM_ICM_train)
-
-    #ials1.fit(epochs=8, num_factors=50, alpha=alpha)
-    #ials1.save_model('SavedModels\\', 'Prova_IALS')'''
+    ials.fit(epochs=8, num_factors=50, alpha=alpha)
 
 
 
@@ -121,10 +129,7 @@ if __name__ == '__main__':
     print(evaluator_validation.evaluateRecommender(hyb7))
     print(evaluator_validation.evaluateRecommender(hyb5))
     print(evaluator_validation.evaluateRecommender(hyb6)'''
-    print(evaluator_validation.evaluateRecommender(pred))
-    #print(evaluator_validation.evaluateRecommender(ials1))
+    print(evaluator_validation.evaluateRecommender(ials))
 
-
-
-    #item_list = recommender.recommend(target_ids, cutoff=10)
-    #CreateCSV.create_csv(target_ids, item_list, 'MyRec')
+    #item_list = ials.recommend(target_ids, cutoff=10)
+    #CreateCSV.create_csv(target_ids, item_list, 'Prova')
