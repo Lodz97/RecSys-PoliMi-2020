@@ -23,14 +23,19 @@ class PredefinedListRecommender(BaseRecommender):
         # convert to csc matrix for faster column-wise sum
 
         self.URM_train = URM_train
+        self.USER_factors = None
+        self.ITEM_factors = None
 
 
 
-    def fit(self):
-        self.model = implicit.als.AlternatingLeastSquares(factors=50)
+    def fit(self, factors=50, epochs=8):
+        self.model = implicit.als.AlternatingLeastSquares(factors=factors, iterations=epochs, regularization=1e-3,
+                                                          calculate_training_loss=True)
 
         # train the model on a sparse matrix of item/user/confidence weights
         self.model.fit(self.URM_train.T)
+        self.USER_factors = self.model.user_factors
+        self.ITEM_factors = self.model.item_factors
 
 
     '''def recommend(self, user_id, cutoff = None, remove_seen_flag=True, remove_top_pop_flag = False, remove_custom_items_flag = False,
@@ -50,14 +55,30 @@ class PredefinedListRecommender(BaseRecommender):
         return recommendation_list[:cutoff]'''
 
     def _compute_item_score(self, user_id_array, items_to_compute = None):
-
-
-        # recommend items for a user
+        '''# recommend items for a user
         rec_list = []
         for el in user_id_array:
-            recommendations = self.model.recommend(el, self.URM_train, N=10000)
+            recommendations = self.model.recommend(el, self.URM_train, N=25975)
             rec_list.append([x[1] for x in recommendations])
-        return np.array(rec_list)
+        arr = np.array(rec_list)
+        return arr'''
+
+        assert self.USER_factors.shape[1] == self.ITEM_factors.shape[1], \
+            "{}: User and Item factors have inconsistent shape".format(self.RECOMMENDER_NAME)
+
+        assert self.USER_factors.shape[0] > np.max(user_id_array), \
+            "{}: Cold users not allowed. Users in trained model are {}, requested prediction for users up to {}".format(
+                self.RECOMMENDER_NAME, self.USER_factors.shape[0], np.max(user_id_array))
+
+        if items_to_compute is not None:
+            item_scores = - np.ones((len(user_id_array), self.ITEM_factors.shape[0]), dtype=np.float32) * np.inf
+            item_scores[:, items_to_compute] = np.dot(self.USER_factors[user_id_array],
+                                                      self.ITEM_factors[items_to_compute, :].T)
+
+        else:
+            item_scores = np.dot(self.USER_factors[user_id_array], self.ITEM_factors.T)
+
+        return item_scores
 
     def recommend(self, user_id_array, cutoff = None, remove_seen_flag=True, items_to_compute = None,
                   remove_top_pop_flag = False, remove_custom_items_flag = False, return_scores = False):

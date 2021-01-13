@@ -64,28 +64,19 @@ if __name__ == '__main__':
                               "validation_metric": "MAP",
                               }
 
-    '''model = implicit.als.AlternatingLeastSquares(factors=50)
-
-    # train the model on a sparse matrix of item/user/confidence weights
-    model.fit(URM_train.T)
-
-    # recommend items for a user
-    rec_list = []
-    for el in target_ids:
-        recommendations = model.recommend(el, URM_train, N=100)
-        rec_list.append([x[1] for x in recommendations])
-    print(rec_list)
-
-    #rows, cols, vals = zip(*rec_list)
-
-    csr_rec = sps.csr_matrix(rec_list)
-    pred = PredefinedListRecommender.PredefinedListRecommender(URM_train)
-    pred.fit()'''
-
-    ials = IALSRecommender.IALSRecommender(URM_ICM_train)
     alpha = 50
     print(alpha)
-    ials.fit(**earlystopping_keywargs, num_factors=300, alpha=alpha)
+
+    '''data_conf = (URM_ICM_train * alpha).astype('double')
+
+    print(implicit.cuda.HAS_CUDA)
+    pred = PredefinedListRecommender.PredefinedListRecommender(data_conf)
+    pred.fit(factors=100, epochs=8)'''
+
+    #ials1 = IALSRecommender.IALSRecommender(URM_ICM_train)
+
+    #ials1.fit(epochs=8, num_factors=50, alpha=alpha)
+    #ials1.save_model('SavedModels\\', 'Prova_IALS')'''
 
 
 
@@ -130,7 +121,10 @@ if __name__ == '__main__':
     print(evaluator_validation.evaluateRecommender(hyb7))
     print(evaluator_validation.evaluateRecommender(hyb5))
     print(evaluator_validation.evaluateRecommender(hyb6)'''
-    print(evaluator_validation.evaluateRecommender(ials))
+    print(evaluator_validation.evaluateRecommender(pred))
+    #print(evaluator_validation.evaluateRecommender(ials1))
+
+
 
     #item_list = recommender.recommend(target_ids, cutoff=10)
     #CreateCSV.create_csv(target_ids, item_list, 'MyRec')

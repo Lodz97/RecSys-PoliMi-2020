@@ -300,8 +300,9 @@ if __name__ == '__main__':
                               "validation_metric": "MAP",
                               }
 
-    ials = IALSRecommender.IALSRecommender(URM_ICM_train_ials)
-    ials.fit(**earlystopping_keywargs, num_factors=600, alpha=50)
+    ials = IALSRecommender.IALSRecommender(URM_ICM_train)
+    ials.fit(epochs=7, num_factors=1500, alpha=25)
+    ials.save_model('SavedModels\\', 'IALS_epochs=7_num_factors=1500_alpha=25')
     # KAGGLE MAP 0.09674
     hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb7, ials)
     hyb3.fit(alpha=0.5)
