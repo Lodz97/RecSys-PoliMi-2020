@@ -10,6 +10,8 @@ from Base.BaseMatrixFactorizationRecommender import BaseMatrixFactorizationRecom
 from Base.Incremental_Training_Early_Stopping import Incremental_Training_Early_Stopping
 from Base.Recommender_utils import check_matrix
 import numpy as np
+from Base.DataIO import DataIO
+from datetime import datetime
 
 
 class IALSRecommender(BaseMatrixFactorizationRecommender, Incremental_Training_Early_Stopping):
@@ -70,6 +72,7 @@ class IALSRecommender(BaseMatrixFactorizationRecommender, Incremental_Training_E
 
         self.USER_factors = self._init_factors(self.n_users, False)  # don't need values, will compute them
         self.ITEM_factors = self._init_factors(self.n_items)
+        #self._init_factors_saved()
 
 
         self._build_confidence_matrix(confidence_scaling)
@@ -165,6 +168,20 @@ class IALSRecommender(BaseMatrixFactorizationRecommender, Incremental_Training_E
 
             self.ITEM_factors[item_id, :] = self._update_row(item_profile, item_confidence, self.USER_factors, UU)
 
+        folder_path = "SavedModels\\IALS_num_factors=2400_alpha=25\\"
+        file_name = datetime.now().strftime('%b%d_%H-%M-%S')
+
+        self._print("Saving model in file '{}'".format(folder_path + file_name))
+
+        data_dict_to_save = {"USER_factors": self.USER_factors,
+                             "ITEM_factors": self.ITEM_factors,
+                             }
+
+        dataIO = DataIO(folder_path=folder_path)
+        dataIO.save_data(file_name=file_name, data_dict_to_save=data_dict_to_save)
+
+        self._print("Saving complete")
+
 
 
     def _update_row(self, interaction_profile, interaction_confidence, Y, YtY):
@@ -208,6 +225,21 @@ class IALSRecommender(BaseMatrixFactorizationRecommender, Incremental_Training_E
 
         else:
             return np.empty((num_factors, self.num_factors))
+
+
+
+    def _init_factors_saved(self):
+
+        dataIO = DataIO(folder_path="SavedModels\\IALS_num_factors=2400_alpha=25\\")
+        data_dict = dataIO.load_data(file_name="Jan14_13-52-40")
+
+        for attrib_name in data_dict.keys():
+            if attrib_name == "USER_factors":
+                self.USER_factors = data_dict[attrib_name]
+            elif attrib_name == "ITEM_factors":
+                self.ITEM_factors = data_dict[attrib_name]
+
+        self._print("Loading complete")
 
 
 

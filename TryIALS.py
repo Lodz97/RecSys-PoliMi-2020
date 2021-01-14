@@ -56,7 +56,7 @@ if __name__ == '__main__':
     URM_ICM_train2 = sps.hstack([ICM_all, URM_train.T])
     URM_ICM_train2 = URM_ICM_train2.tocsr()
 
-    earlystopping_keywargs = {"validation_every_n": 1,
+    earlystopping_keywargs = {"validation_every_n": 50,
                               "stop_on_validation": True,
                               "evaluator_object": evaluator_validation,
                               "lower_validations_allowed": 3,
@@ -81,10 +81,22 @@ if __name__ == '__main__':
     pred = PredefinedListRecommender.PredefinedListRecommender(URM_train)
     pred.fit()'''
 
+    '''bpr = SLIM_BPR_Cython(URM_ICM_train)
+    bpr.fit(epochs=150, topK=1500, learning_rate = 1e-3)
+
+    hyb5 = ScoresHybridP3alphaKNNCBF.ScoresHybridP3alphaKNNCBF(URM_train, ICM_train)
+    hyb5.fit(**{"topK_P": 903, "alpha_P": 0.4108657561671193, "normalize_similarity_P": False, "topK": 448,
+                 "shrink": 5,
+                 "similarity": "tversky", "normalize": True, "alpha": 0.6290871066510789, "feature_weighting": "TF-IDF"})
+    hyb2 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb5, bpr)
+    hyb2.fit(alpha=0.5)'''
+
+
     ials = IALSRecommender.IALSRecommender(URM_ICM_train)
     alpha = 50
     print(alpha)
     ials.fit(epochs=8, num_factors=50, alpha=alpha)
+
 
 
 
@@ -130,6 +142,9 @@ if __name__ == '__main__':
     print(evaluator_validation.evaluateRecommender(hyb5))
     print(evaluator_validation.evaluateRecommender(hyb6)'''
     print(evaluator_validation.evaluateRecommender(ials))
+    '''print(evaluator_validation.evaluateRecommender(bpr))
+    print(evaluator_validation.evaluateRecommender(hyb5))
+    print(evaluator_validation.evaluateRecommender(hyb2))'''
 
     #item_list = ials.recommend(target_ids, cutoff=10)
     #CreateCSV.create_csv(target_ids, item_list, 'Prova')

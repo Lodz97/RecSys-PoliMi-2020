@@ -299,10 +299,12 @@ if __name__ == '__main__':
                               }
 
     ials = IALSRecommender.IALSRecommender(URM_ICM_train)
-    ials.fit(epochs=8, num_factors=600, alpha=25)
+    ials.fit(epochs=7, num_factors=2400, alpha=25)
+
     # KAGGLE MAP 0.09674 num_factors=600, alpha=50
     # KAGGLE MAP 0.09726 num_factors=600, alpha=35
-    # KAGGLE MAP 0.09785 num_factors=600, alpha=35
+    # KAGGLE MAP 0.09785 num_factors=600, alpha=25
+    # KAGGLE MAP 0.09877 num_factors=1200, alpha=25
     hyb3 = ItemKNNScoresHybridRecommender.ItemKNNScoresHybridRecommender(URM_train, hyb7, ials)
     hyb3.fit(alpha=0.5)
 
@@ -394,5 +396,6 @@ if __name__ == '__main__':
     CreateCSV.create_csv(target_ids, item_list, 'Hyb2')
     item_list = hyb6.recommend(target_ids, cutoff=10)
     CreateCSV.create_csv(target_ids, item_list, 'Hyb_URM_ICM')'''
+    ials.save_model('SavedModels\\', 'IALS_epochs=7_num_factors=2400_alpha=25')
 
     print("--- Execution time: %s seconds ---" % (time.time() - start_time))
