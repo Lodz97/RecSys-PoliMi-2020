@@ -99,6 +99,9 @@ if __name__ == '__main__':
             "similarity": "tversky", "normalize": False, "alpha": 0.5207647439152092, "feature_weighting": "none"}
     hyb6.fit(**args)
 
+    svd = PureSVDRecommender.PureSVDRecommender(URM_train)
+    svd.fit()
+
     #cf = ItemKNNCFRecommender.ItemKNNCFRecommender(URM_ICM_train)
     #cf.fit(**{"topK": 259, "shrink": 24, "similarity": "cosine", "normalize": True})
     #W_sparse_CF = cf.W_sparse
@@ -109,6 +112,7 @@ if __name__ == '__main__':
     hyb7.fit(**{"topK_P": 516, "alpha_P": 0.4753488773601332, "normalize_similarity_P": False, "topK": 258, "shrink": 136,
              "similarity": "asymmetric", "normalize": False, "alpha": 0.48907705969537585, "feature_weighting": "BM25"})
 
+    print(evaluator_validation.evaluateRecommender(svd))
     print(evaluator_validation.evaluateRecommender(itemKNNCBF))
     print(evaluator_validation.evaluateRecommender(itemKNNCBF2))
     print(evaluator_validation.evaluateRecommender(itemKNNCBF3))

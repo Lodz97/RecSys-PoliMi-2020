@@ -6,7 +6,7 @@ from SLIM_BPR.Cython.SLIM_BPR_Cython import SLIM_BPR_Cython
 from GraphBased import P3alphaRecommender, RP3betaRecommender
 from SLIM_ElasticNet import SLIMElasticNetRecommender
 from Base.Evaluation.Evaluator import EvaluatorHoldout
-from Base import PredefinedListRecommender
+from Base import ImplicitIALSRecommender
 from MatrixFactorization.Cython import MatrixFactorization_Cython
 from MatrixFactorization import IALSRecommender, NMFRecommender, PureSVDRecommender
 from KNN import ItemKNNCBFRecommender, ItemKNNCFRecommender, ItemKNNCustomSimilarityRecommender,\
