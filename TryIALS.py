@@ -56,7 +56,7 @@ if __name__ == '__main__':
     URM_ICM_train2 = sps.hstack([ICM_all, URM_train.T])
     URM_ICM_train2 = URM_ICM_train2.tocsr()
 
-    earlystopping_keywargs = {"validation_every_n": 50,
+    earlystopping_keywargs = {"validation_every_n": 1,
                               "stop_on_validation": True,
                               "evaluator_object": evaluator_validation,
                               "lower_validations_allowed": 3,
@@ -93,9 +93,9 @@ if __name__ == '__main__':
 
 
     ials = IALSRecommender.IALSRecommender(URM_ICM_train)
-    alpha = 50
+    alpha = 30
     print(alpha)
-    ials.fit(epochs=8, num_factors=50, alpha=alpha)
+    ials.fit(**earlystopping_keywargs, num_factors=150, alpha=alpha)
 
 
 
