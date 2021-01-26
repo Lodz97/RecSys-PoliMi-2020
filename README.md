@@ -14,4 +14,4 @@ The objective of the competition was to create the best recommeder system for a 
 * Ranked 2nd
 * MAP@10 = 0.10803 on Kaggle's private leaderboard
 
-## For further details look at the [presentation](https://github.com/APPiccio/recsys-polimi-2018/blob/master/presentation.pdf)
+## For further details look at the [presentation](https://github.com/Lodz97/RecSys-PoliMi-2020/blob/master/Presentation%20RecSys%20Challenge%202020.pptx)
