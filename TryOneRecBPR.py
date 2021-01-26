@@ -59,5 +59,3 @@ if __name__ == '__main__':
 
 
     print(evaluator_validation.evaluateRecommender(recommender))
-
-    y
