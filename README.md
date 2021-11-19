@@ -14,7 +14,7 @@ Note that the base (non hybrid) recommenders come from [this repository](https:/
 
 ## Overview
 <p align="justify">
-The complete description of the problem to be solved can be found in the kaggle competition link (check the top of the read.me). Shortly, given the User Rating Matrix and the Item Content Matrix, the objective of the competition was to create the best recommeder system for a book recommendation service by providing <b>10 recommended books</b> to each user. In particular the URM was composed by around <b>135k interactions</b>, <b>7947 users</b> and <b>25975 item</b>; the ICM instead contained, for each book, a subset of <b>20000 possible tokens</b> (some books had less than 10 tokens, other more than 40).
+The complete description of the problem to be solved can be found in the kaggle competition link (check the top of the read.me). Shortly, given the User Rating Matrix and the Item Content Matrix, the objective of the competition was to create the best recommender system for a book recommendation service by providing <b>10 recommended books</b> to each user. In particular the URM was composed by around <b>135k interactions</b>, <b>7947 users</b> and <b>25975 item</b>; the ICM instead contained, for each book, a subset of <b>20000 possible tokens</b> (some books had less than 10 tokens, other more than 40).
 
 Note that the evaluation metric for this competition was the mean average precision at position 10 (**MAP@10**).
 </p>
