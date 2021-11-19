@@ -30,7 +30,7 @@ The final model used for the best submission is an hybrid recommeder created by 
   <li><p align="justify"><b>IALS</b>: add IALS recommeder to the final hybrid (very different model from the previous ones). Using URM concatenated with ICM improved performance in CF and CBF algorithms, and improved also this ML model. Since this algorithm is very slow, tune with max 300 factors, and assume will work for more; also tune carefully the hyperparameter alpha.</p></li>
 </ol>
 <p align="justify">
-Best model overall: hybrid of previous best multilevel specialized hybrid and IALS with n_factors = 1200 and alpha = 25, MAP@10 = 0.09877 (public), 0.10803 (private)
+Best model overall: hybrid of previous best multilevel specialized hybrid and IALS with n_factors = 1200 and alpha = 25, MAP@10 = 0.09877 (public), 0.10803 (private).
 </p>
 
 
