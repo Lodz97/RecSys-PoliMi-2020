@@ -1,35 +1,10 @@
 from Data_manager.RecSys2020 import RecSys2020Reader
-from Notebooks_utils.data_splitter import train_test_holdout
-import matplotlib.pyplot as pyplot
+from Data_manager.split_functions.data_splitter import train_test_holdout
 import numpy as np
-from SLIM_BPR.Cython.SLIM_BPR_Cython import SLIM_BPR_Cython
-from GraphBased import P3alphaRecommender, RP3betaRecommender
-from SLIM_ElasticNet import SLIMElasticNetRecommender
 from Base.Evaluation.Evaluator import EvaluatorHoldout
-from MatrixFactorization.Cython import MatrixFactorization_Cython
-from MatrixFactorization import IALSRecommender, NMFRecommender, PureSVDRecommender
-from KNN import ItemKNNCBFRecommender, ItemKNNCFRecommender, ItemKNNCustomSimilarityRecommender,\
-                ItemKNNSimilarityHybridRecommender, UserKNNCFRecommender
-from EASE_R import EASE_R_Recommender
-from FeatureWeighting import CFW_D_Similarity_Linalg
-from Base.NonPersonalizedRecommender import TopPop, GlobalEffects
-import ItemKNNScoresHybridRecommender
-import ScoresHybrid3Recommender
-import ScoresHybridP3alphaKNNCBF, ScoresHybridRP3betaKNNCBF
-import ScoresHybridP3alphaPureSVD
-import RankingHybrid
-import ScoresHybridSpecialized
-import ScoresHybridSpecializedCold
-import ScoresHybridSpecializedFusion
-import ScoresHybridSpecializedV2Cold, ScoresHybridSpecializedV2Mid, ScoresHybridSpecializedV2Warm
-import ScoresHybridSpecializedV2Mid12, ScoresHybridSpecializedV2Warm12
-import ScoresHybridSpecializedV3Cold
-import ScoresHybridSpecializedV3Warm
-import ScoresHybridSpecializedV2Fusion
-import ScoresHybridSpecializedAdaptive
-import ScoresHybridKNNCFKNNCBF
-import CreateCSV
-from sklearn.preprocessing import normalize
+from Recommenders.MatrixFactorization import IALSRecommender
+from Recommenders.Hybrids import ScoresHybridSpecializedV2Warm12, ScoresHybridSpecializedFusion, \
+    ScoresHybridSpecialized, ScoresHybridSpecializedCold, ItemKNNScoresHybridRecommender, ScoresHybridP3alphaKNNCBF
 from scipy import sparse as sps
 from Utils.PoolWithSubprocess import PoolWithSubprocess
 import multiprocessing

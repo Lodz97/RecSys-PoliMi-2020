@@ -16,21 +16,21 @@ Created on 22/11/17
 from Base.NonPersonalizedRecommender import TopPop, Random, GlobalEffects
 
 # KNN
-from KNN.UserKNNCFRecommender import UserKNNCFRecommender
-from KNN.ItemKNNCFRecommender import ItemKNNCFRecommender
-from GraphBased.P3alphaRecommender import P3alphaRecommender
-from GraphBased.RP3betaRecommender import RP3betaRecommender
-from EASE_R.EASE_R_Recommender import EASE_R_Recommender
+from Recommenders.KNN.UserKNNCFRecommender import UserKNNCFRecommender
+from Recommenders.KNN.ItemKNNCFRecommender import ItemKNNCFRecommender
+from Recommenders.GraphBased.P3alphaRecommender import P3alphaRecommender
+from Recommenders.GraphBased.RP3betaRecommender import RP3betaRecommender
+from Recommenders.EASE_R.EASE_R_Recommender import EASE_R_Recommender
 
 # KNN machine learning
-from SLIM_BPR.Cython.SLIM_BPR_Cython import SLIM_BPR_Cython
-from SLIM_ElasticNet.SLIMElasticNetRecommender import SLIMElasticNetRecommender, MultiThreadSLIM_ElasticNet
+from Recommenders.SLIM_BPR.Cython.SLIM_BPR_Cython import SLIM_BPR_Cython
+from Recommenders.SLIM_ElasticNet.SLIMElasticNetRecommender import SLIMElasticNetRecommender, MultiThreadSLIM_ElasticNet
 
 # Matrix Factorization
-from MatrixFactorization.PureSVDRecommender import PureSVDRecommender
-from MatrixFactorization.IALSRecommender import IALSRecommender
-from MatrixFactorization.NMFRecommender import NMFRecommender
-from MatrixFactorization.Cython.MatrixFactorization_Cython import MatrixFactorization_BPR_Cython,\
+from Recommenders.MatrixFactorization.PureSVDRecommender import PureSVDRecommender
+from Recommenders.MatrixFactorization.IALSRecommender import IALSRecommender
+from Recommenders.MatrixFactorization.NMFRecommender import NMFRecommender
+from Recommenders.MatrixFactorization.Cython.MatrixFactorization_Cython import MatrixFactorization_BPR_Cython,\
     MatrixFactorization_FunkSVD_Cython, MatrixFactorization_AsySVD_Cython
 
 
@@ -42,15 +42,13 @@ from MatrixFactorization.Cython.MatrixFactorization_Cython import MatrixFactoriz
 ##########                  PURE CONTENT BASED              ##########
 ##########                                                  ##########
 ######################################################################
-from KNN.ItemKNNCBFRecommender import ItemKNNCBFRecommender
+from Recommenders.KNN.ItemKNNCBFRecommender import ItemKNNCBFRecommender
 
 
 
 ######################################################################
 from skopt.space import Real, Integer, Categorical
 import traceback
-from Utils.PoolWithSubprocess import PoolWithSubprocess
-
 
 from ParameterTuning.SearchBayesianSkopt import SearchBayesianSkopt
 from ParameterTuning.SearchSingleCase import SearchSingleCase
@@ -587,7 +585,6 @@ def runParameterSearch_Collaborative(recommender_class, URM_train, URM_train_las
 import os, multiprocessing
 from functools import partial
 
-from Data_manager.Movielens.Movielens10MReader import Movielens10MReader
 from Data_manager.split_functions.split_train_validation_random_holdout import split_train_in_two_percentage_global_sample
 
 

@@ -118,3 +118,8 @@ ENV/
 
 # mypy
 .mypy_cache/
+/Results/
+/SavedModels/.temp_DataIO__SHRP3betaKNNCBF{K_P=623,a_P=0.5081918,n_sim_P=F,K=1000,sh=1000,sim=tv,nor=T,a=0.4474009,b_P=0.0,f_w=TF-IDF},s=1239,tp=0.75/
+/SavedModels/IALS_num_factors=2400_alpha=25/
+/SavedModels/
+/SavedModels/

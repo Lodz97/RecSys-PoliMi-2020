@@ -15,34 +15,30 @@ Created on 22/11/17
 ######################################################################
 
 
-from KNN.ItemKNNCFRecommender import ItemKNNCFRecommender
 #Hybrid
-from ScoresHybridP3alphaKNNCBF import ScoresHybridP3alphaKNNCBF
-from ScoresHybridRP3betaKNNCBF import ScoresHybridRP3betaKNNCBF
-from ScoresHybridP3alphaPureSVD import ScoresHybridP3alphaPureSVD
-from ScoresHybridSpecialized import ScoresHybridSpecialized
-from ScoresHybridSpecializedCold import ScoresHybridSpecializedCold
-from ScoresHybridSpecializedV2Cold import ScoresHybridSpecializedV2Cold
-from ScoresHybridSpecializedV2Mid import ScoresHybridSpecializedV2Mid
-from ScoresHybridSpecializedV2Warm import ScoresHybridSpecializedV2Warm
-from ScoresHybridSpecializedV2Mid12 import ScoresHybridSpecializedV2Mid12
-from ScoresHybridSpecializedV2Warm12 import ScoresHybridSpecializedV2Warm12
-from ScoresHybridSpecializedV3Cold import ScoresHybridSpecializedV3Cold
-from ScoresHybridSpecializedV3Warm import ScoresHybridSpecializedV3Warm
-from ScoresHybridSpecializedAdaptive import ScoresHybridSpecializedAdaptive
-from ScoresHybridKNNCFKNNCBF import ScoresHybridKNNCFKNNCBF
-from ScoresHybridUserKNNCFKNNCBF import ScoresHybridUserKNNCFKNNCBF
+from Recommenders.Hybrids.ScoresHybridP3alphaKNNCBF import ScoresHybridP3alphaKNNCBF
+from Recommenders.Hybrids.ScoresHybridRP3betaKNNCBF import ScoresHybridRP3betaKNNCBF
+from Recommenders.Hybrids.ScoresHybridP3alphaPureSVD import ScoresHybridP3alphaPureSVD
+from Recommenders.Hybrids.ScoresHybridSpecialized import ScoresHybridSpecialized
+from Recommenders.Hybrids.ScoresHybridSpecializedCold import ScoresHybridSpecializedCold
+from Recommenders.Hybrids.ScoresHybridSpecializedV2Cold import ScoresHybridSpecializedV2Cold
+from Recommenders.Hybrids.ScoresHybridSpecializedV2Mid import ScoresHybridSpecializedV2Mid
+from Recommenders.Hybrids.ScoresHybridSpecializedV2Warm import ScoresHybridSpecializedV2Warm
+from Recommenders.Hybrids.ScoresHybridSpecializedV2Mid12 import ScoresHybridSpecializedV2Mid12
+from Recommenders.Hybrids.ScoresHybridSpecializedV2Warm12 import ScoresHybridSpecializedV2Warm12
+from Recommenders.Hybrids.ScoresHybridSpecializedV3Cold import ScoresHybridSpecializedV3Cold
+from Recommenders.Hybrids.ScoresHybridSpecializedV3Warm import ScoresHybridSpecializedV3Warm
+from Recommenders.Hybrids.ScoresHybridSpecializedAdaptive import ScoresHybridSpecializedAdaptive
+from Recommenders.Hybrids.ScoresHybridKNNCFKNNCBF import ScoresHybridKNNCFKNNCBF
+from Recommenders.Hybrids.ScoresHybridUserKNNCFKNNCBF import ScoresHybridUserKNNCFKNNCBF
 from FeatureWeighting.CFW_D_Similarity_Linalg import CFW_D_Similarity_Linalg
 
 
 ######################################################################
 from skopt.space import Real, Integer, Categorical
 import traceback
-from Utils.PoolWithSubprocess import PoolWithSubprocess
-
 
 from ParameterTuning.SearchBayesianSkopt import SearchBayesianSkopt
-from ParameterTuning.SearchSingleCase import SearchSingleCase
 from ParameterTuning.SearchAbstractClass import SearchInputRecommenderArgs
 
 
